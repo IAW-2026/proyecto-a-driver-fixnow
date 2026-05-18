@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -- ENUMS --
+
+enum ServiceType {
+  PLOMERIA
+  ELECTRICIDAD
+  GAS
+}
+
+enum JobStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// -- MODELS --
+
+model Professional {
+  id          String        @id
+  fullName    String        @map("full_name")
+  email       String        @unique
+  serviceType ServiceType   @map("service_type")
+  rating      Float         @default(5.0)
+
+  latitude    Float
+  longitude   Float
+
+  radiusKm    Int           @map("radious_km")
+  isAvailable Boolean       @default(true) @map("is_available")
+  isVerified  Boolean       @default(false) @map("is_verified")
+
+  availabilities Availability[]
+  jobAssignments JobAssignment[]
+
+  @@map("professionals")
+}
+
+model Availability {
+  id              String        @id @default(uuid()) @db.Uuid
+  professionalId  String        @map("professional_id")
+  professional    Professional  @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  date            DateTime      @db.Date
+  startTime       DateTime      @db.Time() @map("start_time")
+  endTime         DateTime      @db.Time() @map("end_time")
+  isBlocked       Boolean       @default(false) @map("is_blocked")
+
+  @@map("availabilities")
+}
+
+model JobAssignment {
+  id              String        @id @default(uuid()) @db.Uuid
+  jobId           String        @map("job_id") @db.Uuid
+  professionalId  String        @map("professional_id")
+  professional    Professional  @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  status          JobStatus     @default(PENDING)
+  acceptedAt      DateTime      @default(now()) @map("accepted_at")
+
+  @@map("job_assignments")
+}
