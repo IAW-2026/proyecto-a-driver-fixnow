@@ -32,14 +32,14 @@ model Professional {
   id          String        @id
   fullName    String        @map("full_name")
   email       String        @unique
-  serviceType ServiceType   @map("service_type")
+  serviceType ServiceType?   @map("service_type")
   rating      Float         @default(5.0)
 
   latitude    Float
   longitude   Float
 
   radiusKm    Int           @map("radious_km")
-  isAvailable Boolean       @default(true) @map("is_available")
+  isAvailable Boolean       @default(false) @map("is_available")
   isVerified  Boolean       @default(false) @map("is_verified")
 
   availabilities Availability[]
