@@ -18,6 +18,12 @@ enum ServiceType {
   GAS
 }
 
+enum Status {
+  ONLINE
+  BUSY
+  OFFLINE
+}
+
 enum JobStatus {
   PENDING
   ACCEPTED
@@ -30,45 +36,21 @@ enum JobStatus {
 
 model Professional {
   id          String        @id
-  fullName    String        @map("full_name")
+  firstName   String        @map("first_name")
+  lastName    String        @map("last_name")
   email       String        @unique
-  serviceType ServiceType?   @map("service_type")
-  rating      Float         @default(5.0)
+  phoneNumber String        @map("phone_number")
+  serviceType ServiceType?  @map("service_type")
+  rating      Float         @default(-1.0)
 
   latitude    Float
   longitude   Float
 
   radiusKm    Int           @map("radious_km")
-  isAvailable Boolean       @default(false) @map("is_available")
+  status      Status        @default(OFFLINE)
   isVerified  Boolean       @default(false) @map("is_verified")
 
-  availabilities Availability[]
-  jobAssignments JobAssignment[]
+  activeJobID String?       @map("active_job_id")
 
   @@map("professionals")
-}
-
-model Availability {
-  id              String        @id @default(uuid()) @db.Uuid
-  professionalId  String        @map("professional_id")
-  professional    Professional  @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-
-  date            DateTime      @db.Date
-  startTime       DateTime      @db.Time() @map("start_time")
-  endTime         DateTime      @db.Time() @map("end_time")
-  isBlocked       Boolean       @default(false) @map("is_blocked")
-
-  @@map("availabilities")
-}
-
-model JobAssignment {
-  id              String        @id @default(uuid()) @db.Uuid
-  jobId           String        @map("job_id") @db.Uuid
-  professionalId  String        @map("professional_id")
-  professional    Professional  @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-
-  status          JobStatus     @default(PENDING)
-  acceptedAt      DateTime      @default(now()) @map("accepted_at")
-
-  @@map("job_assignments")
 }

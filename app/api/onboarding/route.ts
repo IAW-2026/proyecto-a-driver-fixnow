@@ -7,13 +7,10 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({error: "Unauthorized"}, { status: 401 })
 
   const body = await request.json()
-  const { name, service, startTime, endTime } = body
+  const { firstName, lastName, phoneNumber, service} = body
 
-  if (!name || !service || !startTime || !endTime) {
+  if (!firstName || !lastName || !phoneNumber || !service) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-  }
-  if(startTime >= endTime) {
-    return NextResponse.json({ error: "Invalid time range" }, { status: 400 })
   }
 
   const email = user.emailAddresses?.[0]?.emailAddress ?? ""
@@ -23,27 +20,22 @@ export async function POST(request: Request) {
     create: {
       id: user.id,
       email,
-      fullName: name,
+      firstName,
+      lastName,
+      phoneNumber,
       serviceType: service || null,
       rating: 5.0,
       latitude: 0,
       longitude: 0,
       radiusKm: 10,
       isVerified: false,
-      isAvailable: false,
     },
     update: {
       id: user.id,
-      fullName: name,
+      firstName,
+      lastName,
+      phoneNumber,
       serviceType: service || undefined,
-      availabilities: { 
-        deleteMany: {},
-        create: {
-          date: new Date(),
-          startTime: `${startTime}:00`,
-          endTime: `${endTime}:00`,
-        }
-      }
     },
   })
 

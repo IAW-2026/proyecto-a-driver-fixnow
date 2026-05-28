@@ -18,7 +18,9 @@ export default function ProfileForm({
   email: string
 }) {
   const router = useRouter()
-  const [name, setName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
   const [service, setService] = useState("")
   const [startTime, setStartTime] = useState("08:00")
   const [endTime, setEndTime] = useState("17:00")
@@ -26,7 +28,9 @@ export default function ProfileForm({
   const [error, setError] = useState<string | null>(null)
 
   const isFormValid =
-    name.trim().length > 0 &&
+    firstName.trim().length > 0 &&
+    lastName.trim().length > 0 &&
+    phoneNumber.trim().length > 0 &&
     service.length > 0 &&
     startTime.length > 0 &&
     endTime.length > 0 &&
@@ -44,22 +48,27 @@ export default function ProfileForm({
         body: JSON.stringify({
           clerkId,
           email,
-          name,
+          firstName,
+          lastName,
+          phoneNumber,
           service,
-          startTime,
-          endTime,
         }),
       })
 
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        setError(data?.error || "No se pudo completar el registro. Por favor, intenta nuevamente.")
+        setError(data?.error || 
+          `No se pudo completar el registro.
+          Por favor, intente nuevamente.`)
         return
       }
 
     router.push("/home")
   } catch (err) {
-    setError("No se pudo completar el registro. Por favor, intenta nuevamente.")
+    setError(
+      `No se pudo completar el registro. 
+      Por favor, intente nuevamente.`
+    )
   } finally {
     setIsSubmitting(false)
   }
@@ -71,12 +80,23 @@ export default function ProfileForm({
       className="space-y-6 rounded-[2rem] border border-white/10 bg-[#0b0f19]/90 p-8 shadow-[0_0_60px_rgba(0,0,0,0.25)]"
     >
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-300">Nombre y Apellido</label>
+        <label className="text-sm font-semibold text-slate-300">Nombre</label>
         <input
           required
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Juan Pérez"
+          value={firstName}
+          onChange={(event) => setFirstName(event.target.value)}
+          placeholder="Juan"
+          className="w-full rounded-2xl border border-white/10 bg-[#03101f] px-4 py-3 text-white outline-none transition focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-slate-300">Apellido</label>
+        <input
+          required
+          value={lastName}
+          onChange={(event) => setLastName(event.target.value)}
+          placeholder="Pérez"
           className="w-full rounded-2xl border border-white/10 bg-[#03101f] px-4 py-3 text-white outline-none transition focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20"
         />
       </div>
@@ -99,39 +119,17 @@ export default function ProfileForm({
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <label className="text-sm font-semibold text-slate-300">
-              Hora de inicio
-            </label>
-            <input
-              type="time"
-              required
-              value={startTime}
-              onChange={(event) => setStartTime(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-[#03101f] px-4 py-3 text-white outline-none transition focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20"
-            />
-          </div>
-
-          <div className="flex-1">
-            <label className="text-sm font-semibold text-slate-300">
-              Hora de finalización
-            </label>
-            <input
-              type="time"
-              required
-              value={endTime}
-              onChange={(event) => setEndTime(event.target.value)}
-              className="mt-2 w-full rounded-2xl border border-white/10 bg-[#03101f] px-4 py-3 text-white outline-none transition focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20"
-            />
-          </div>
-        </div>
+        <label className="text-sm font-semibold text-slate-300">Número de teléfono</label>
+        <input
+          required
+          value={phoneNumber}
+          onChange={(event) => setPhoneNumber(event.target.value)}
+          placeholder="123-456-7890"
+          className="w-full rounded-2xl border border-white/10 bg-[#03101f] px-4 py-3 text-white outline-none transition focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20"
+        />
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/10">
-        {error ? (
-          <p className="text-sm text-rose-400">{error}</p>
-        ) : null}
         <SignOutButton>
           <button
             type="button"
@@ -140,6 +138,12 @@ export default function ProfileForm({
             Cancelar
           </button>
         </SignOutButton>
+
+        {error ? (
+          <p className="text-sm text-rose-400 text-center whitespace-pre-line leading-relaxed">
+            {error}
+          </p>
+        ) : null}
 
         <button
             type="submit"
