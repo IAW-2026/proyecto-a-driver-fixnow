@@ -23,7 +23,7 @@ export default async function OnboardingPage() {
             Completa tu perfil
           </h1>
           <p className="mt-3 max-w-2xl text-slate-400">
-            Déjanos saber tu nombre, servicio principal y horario de disponibilidad para activar tu cuenta.
+            Déjanos saber tu nombre, número de teléfono y servicio principal para activar tu cuenta.
           </p>
         </div>
 
