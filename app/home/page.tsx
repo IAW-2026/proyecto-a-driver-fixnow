@@ -1,8 +1,10 @@
 import { auth, currentUser } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { UserButton } from "@clerk/nextjs"
 import { Briefcase, Clock, ShieldCheck, MapPin } from "lucide-react"
+import StatusToggle from "../components/StatusToggle"
 
 export default async function HomePage() {
   const { userId } = await auth()
@@ -40,7 +42,17 @@ export default async function HomePage() {
       <nav className="border-b border-white/5 bg-[#0B0F19] px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full bg-[#FFB800] animate-pulse" />
+            <div className="relative w-20 h-20 opacity-90 transition-transform duration-500 group-hover:scale-105">
+              {/* Replace with your specific Mascot Asset */}
+              <Image 
+                src="/logo.png" 
+                alt="FixNow Mascot" 
+                width={60}
+                height={60}
+                priority
+                className="object-contain filter brightness-110 drop-shadow-[0_0_20px_rgba(255,184,0,0.15)]"
+              />
+            </div>
             <span className="font-black tracking-wider text-xl text-white">
               FIX<span className="text-[#FFB800]">NOW</span>
             </span>
@@ -109,25 +121,12 @@ export default async function HomePage() {
         </div>
 
         {/* 4. WORK OVERVIEW BLOCK */}
-        <div className="rounded-2xl border border-white/5 bg-[#0B0F19] p-8 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
-            <div>
-              <h2 className="text-xl font-bold">Estado de Disponibilidad del Perfil</h2>
-              <p className="text-slate-400 text-sm mt-1">Cuando está activo, los clientes cercanos pueden encontrarte en el mapa en tiempo real.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${professional.status ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                <span className={`h-1.5 w-1.5 rounded-full ${professional.status ? 'bg-emerald-400' : 'bg-rose-400'}`} />
-              </span>
-            </div>
-          </div>
-
-          {/* Dummy Placeholder Layout Box for Next Features */}
-          <div className="rounded-xl border border-dashed border-white/10 p-12 text-center space-y-2">
-            <p className="text-slate-400 font-medium">Historial de asignaciones de trabajo próximo a implementarse</p>
-            <p className="text-slate-600 text-xs">Aquí podrás visualizar solicitudes entrantes basadas en tu ubicación ({professional.latitude}, {professional.longitude}).</p>
-          </div>
-        </div>
+        <StatusToggle 
+          professionalId={professional.id}
+          initialStatus={professional.status} // Passes: ONLINE | OFFLINE | BUSY
+          latitude={professional.latitude}
+          longitude={professional.longitude}
+        />
 
       </main>
     </div>
