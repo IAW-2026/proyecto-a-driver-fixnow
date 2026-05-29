@@ -4,7 +4,7 @@ import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { UserButton } from "@clerk/nextjs"
 import { Briefcase, Clock, ShieldCheck, MapPin } from "lucide-react"
-import StatusToggle from "../components/StatusToggle"
+import StatusToggle from "../../components/StatusToggle"
 
 export default async function HomePage() {
   const { userId } = await auth()
@@ -29,45 +29,17 @@ export default async function HomePage() {
   const formatService = (type: string | null) => {
     if (!type) return "No asignado"
     const mapping: Record<string, string> = {
-      PLOMERIA: "Plomero Profesional",
-      GAS: "Gasista Matriculado",
-      ELECTRICIDAD: "Electricista Profesional",
+      PLOMERIA: "PLOMERO",
+      GAS: "GASISTA",
+      ELECTRICIDAD: "ELECTRICISTA",
     }
     return mapping[type] || type
   }
 
   return (
     <div className="min-h-screen bg-[#030712] text-white">
-      {/* 1. TOP NAVBAR CONTAINER */}
-      <nav className="border-b border-white/5 bg-[#0B0F19] px-6 py-4">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="relative w-20 h-20 opacity-90 transition-transform duration-500 group-hover:scale-105">
-              {/* Replace with your specific Mascot Asset */}
-              <Image 
-                src="/logo.png" 
-                alt="FixNow Mascot" 
-                width={60}
-                height={60}
-                priority
-                className="object-contain filter brightness-110 drop-shadow-[0_0_20px_rgba(255,184,0,0.15)]"
-              />
-            </div>
-            <span className="font-black tracking-wider text-xl text-white">
-              FIX<span className="text-[#FFB800]">NOW</span>
-            </span>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-slate-400 hidden sm:inline">
-              Panel del Profesional
-            </span>
-            <UserButton />
-          </div>
-        </div>
-      </nav>
 
-      {/* 2. MAIN BODY CONTENT */}
+      {/* 1. MAIN BODY CONTENT */}
       <main className="mx-auto max-w-7xl px-6 py-10">
         
         {/* Welcome Header Banner */}
@@ -80,7 +52,7 @@ export default async function HomePage() {
           </p>
         </div>
 
-        {/* 3. METRICS GRID CARDS */}
+        {/* 2. METRICS GRID CARDS */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-10">
           
           {/* Card 1: Profession */}
@@ -120,7 +92,7 @@ export default async function HomePage() {
 
         </div>
 
-        {/* 4. WORK OVERVIEW BLOCK */}
+        {/* 3. WORK OVERVIEW BLOCK */}
         <StatusToggle 
           professionalId={professional.id}
           initialStatus={professional.status} // Passes: ONLINE | OFFLINE | BUSY

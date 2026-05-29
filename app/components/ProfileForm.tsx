@@ -30,7 +30,7 @@ export default function ProfileForm({
   const isFormValid =
     firstName.trim().length > 0 &&
     lastName.trim().length > 0 &&
-    phoneNumber.trim().length > 0 &&
+    phoneNumber.trim().length === 7 &&
     service.length > 0 &&
     startTime.length > 0 &&
     endTime.length > 0 &&
@@ -119,12 +119,15 @@ export default function ProfileForm({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-300">Número de teléfono</label>
+        <label className="text-sm font-semibold text-slate-300">Número de teléfono sin código de area</label>
         <input
           required
+          type="number"
+          maxLength={7}
+          pattern="[0-9]{7}"
           value={phoneNumber}
           onChange={(event) => setPhoneNumber(event.target.value)}
-          placeholder="123-456-7890"
+          placeholder="1234567"
           className="w-full rounded-2xl border border-white/10 bg-[#03101f] px-4 py-3 text-white outline-none transition focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/20"
         />
       </div>
