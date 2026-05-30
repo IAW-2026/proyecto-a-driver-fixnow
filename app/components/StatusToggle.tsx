@@ -1,7 +1,18 @@
 "use client"
 
-import { useState } from "react"
-import { Loader2, ShieldAlert, CheckCircle, MapPin } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Briefcase, Radio, Trash2, Loader2, ShieldAlert, CheckCircle, MapPin } from "lucide-react"
+import JobRequestCard from "./JobRequestCard"
+
+interface jobRequest {
+  id: string
+  clientName: string
+  description: string
+  estimatedPrice?: number | null
+  latitude: number
+  longitude: number
+  status: string
+}
 
 interface StatusToggleProps {
   professionalId: string
@@ -29,13 +40,79 @@ export default function StatusToggle({
   longitude,
 }: StatusToggleProps) {
   const [status, setStatus] = useState<"ONLINE" | "OFFLINE" | "BUSY">(initialStatus)
+  const [pendingJobs, setPendingJobs] = useState<jobRequest[]>([])
+  const [currentJob, setCurrentJob] = useState<jobRequest | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  
-  // Track specific steps for non-intrusive micro-copy feedback
   const [loadingStep, setLoadingStep] = useState<"gps" | "saving" | null>(null)
+  const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null)
 
   const isBusy = status === "BUSY"
   const isOnline = status === "ONLINE"
+
+  //SSE Connection
+  useEffect(() => {
+    if(!professionalId) return
+
+    const eventSource = new EventSource(`/api/jobs/stream?professionalId=${professionalId}`)
+    
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+
+      switch(data.type) {
+        case 'current_job':
+          setCurrentJob(data.job)
+          setPendingJobs([])
+          setStatus("BUSY")
+          break
+
+        case 'initial_jobs':
+          setPendingJobs(data.jobs || [])
+          setCurrentJob(null)
+          break
+
+        case 'new_job':
+          if (!currentJob) {
+            setPendingJobs(prev => [data, ...prev])
+          }
+          break
+
+        case 'job_removed':
+          setPendingJobs(prev => prev.filter(j => j.id !== data.job_id))
+          if (currentJob?.id === data.job_id) setCurrentJob(null)
+          break
+
+        case 'job_accepted':
+          setCurrentJob(data)
+          setPendingJobs([])
+          setStatus("BUSY")
+          break
+
+        case 'job_completed':
+          setCurrentJob(null)
+          setStatus("ONLINE")
+          break
+      }
+    }
+
+    return () => eventSource.close()
+  }, [professionalId, currentJob?.id]);
+
+  const handleAcceptJob = async (jobId: string) => {
+    setAcceptingJobId(jobId)
+    try {
+      const res = await fetch("/api/jobs/accept", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_id: jobId, professional_id: professionalId }),
+      })
+      if (!res.ok) throw new Error("Failed to accept job")
+    } catch (err) {
+      alert("Error accepting job")
+    } finally {
+      setAcceptingJobId(null)
+    }
+  }
+
 
   async function updateProfessionalStatus(nextStatus: "ONLINE" | "OFFLINE", includeCoords: boolean) {
     setIsLoading(true)
@@ -86,8 +163,27 @@ export default function StatusToggle({
   }
 
   async function handleFinishJob() {
-    if (isLoading) return
-    await updateProfessionalStatus("ONLINE", true)
+    if (isLoading || !currentJob) return
+    setIsLoading(true)
+    try{
+      const res = await fetch("/api/jobs/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job_id: currentJob?.id, professional_id: professionalId }),
+      })
+      if (!res.ok){
+        const error = await res.json()
+        throw new Error(error.error || "Failed to complete job")
+      }
+      setCurrentJob(null)
+      setPendingJobs([])
+      await updateProfessionalStatus("ONLINE", true)
+    } catch (err) {
+      console.error("Failed to complete job:", err)
+      alert("Error al finalizar el trabajo. Intenta nuevamente.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -114,7 +210,8 @@ export default function StatusToggle({
             </span>
           </div>
           <p className="text-slate-400 text-sm max-w-xl">
-            {isBusy
+            { isOnline ? "Estás disponible para recibir solicitudes de servicio." :
+              isBusy
               ? "Te encuentras atendiendo un servicio activo. No puedes cambiar tu disponibilidad hasta terminarlo."
               : "Cuando estás En Línea, podrás recibir solicitudes de servicio."}
           </p>
@@ -142,10 +239,8 @@ export default function StatusToggle({
         </div>
       </div>
 
-      {/* --- WORKSPACE VIEW OVERVIEW PANEL WITH NON-INTRUSIVE FEEDBACK --- */}
+      {/* --- WORKSPACE VIEW OVERVIEW PANEL --- */}
       <div className="rounded-xl border border-white/5 bg-[#030a14] p-8 text-center transition-all duration-300 relative overflow-hidden">
-        
-        {/* Subtle top progress bar indicator when loading */}
         {isLoading && (
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-white/5 overflow-hidden">
             <div className="h-full bg-gradient-to-r from-transparent via-emerald-500 to-transparent w-1/2 animate-[shimmer_1.5s_infinite] transition-all" />
@@ -153,32 +248,24 @@ export default function StatusToggle({
         )}
 
         {isLoading ? (
+          // Loading state (unchanged)
           <div className="py-4 flex flex-col items-center justify-center gap-3 animate-fade-in">
-            {loadingStep === "gps" ? (
-              <>
-                <MapPin className="h-5 w-5 text-emerald-400 animate-bounce" />
-                <p className="text-sm font-medium text-emerald-400/90">Sincronizando coordenadas GPS actuales...</p>
-              </>
-            ) : (
-              <>
-                <Loader2 className="h-5 w-5 text-slate-400 animate-spin" />
-                <p className="text-sm font-medium text-slate-400">Actualizando estado en el servidor de FixNow...</p>
-              </>
-            )}
-            <p className="text-xs text-slate-600">Esto tomará solo un momento.</p>
           </div>
-        ) : isBusy ? (
+        ) : isBusy && currentJob ? (
+          // Current Job View
           <div className="flex flex-col items-center gap-4">
             <div className="rounded-full bg-amber-500/10 p-4 text-amber-400 ring-4 ring-amber-500/5">
               <ShieldAlert className="h-6 w-6" />
             </div>
             <div className="space-y-1">
               <p className="text-amber-400 font-bold text-lg">Servicio en Curso</p>
-              <p className="text-slate-400 text-sm max-w-md mx-auto">
-                Estás asignado a una orden de asistencia técnica. Al finalizar el trabajo presiona el botón de abajo para reportar tu nueva ubicación geográfica.
-              </p>
+              <p className="text-slate-300">{currentJob.description}</p>
+              {currentJob.estimatedPrice && (
+                <p className="text-emerald-400 font-semibold">
+                  Precio estimado: ${currentJob.estimatedPrice.toLocaleString()}
+                </p>
+              )}
             </div>
-            
             <button
               type="button"
               onClick={handleFinishJob}
@@ -188,12 +275,43 @@ export default function StatusToggle({
               Finalizar Trabajo y Volver En Línea
             </button>
           </div>
+        ) :!isOnline ? (   // ← NEW: OFFLINE State
+        <div className="py-16 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
+            <Radio className="h-8 w-8 text-slate-500" />
+          </div>
+          <h3 className="text-xl font-semibold text-slate-400">Estás Desconectado</h3>
+          <p className="text-slate-500 mt-2 max-w-xs">
+            Activa tu estado a <span className="text-emerald-400">"En Línea"</span> para ver solicitudes disponibles.
+          </p>
+        </div>
         ) : (
-          <div className="py-4 space-y-2">
-            <p className="text-slate-400 font-medium">Aquí recibirás notificaciones sobre nuevas solicitudes de servicio.</p>
-            <p className="text-slate-600 text-xs">
-              Última posición guardada: ({latitude}, {longitude}).
-            </p>
+          // Available Jobs View
+          <div className="space-y-6">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Briefcase className="h-5 w-5 text-emerald-400" />
+              <h3 className="font-bold text-lg">Solicitudes Disponibles ({pendingJobs.length})</h3>
+            </div>
+
+            {pendingJobs.length === 0 ? (
+              <div className="py-12">
+                <p className="text-slate-400 font-medium">Aquí recibirás notificaciones sobre nuevas solicitudes de servicio.</p>
+                <p className="text-slate-600 text-xs mt-2">
+                  Última posición guardada: ({latitude}, {longitude})
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                {pendingJobs.map((job) => (
+                  <JobRequestCard
+                    key={job.id}
+                    job={job}
+                    onAccept={handleAcceptJob}
+                    isLoading={acceptingJobId === job.id}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
