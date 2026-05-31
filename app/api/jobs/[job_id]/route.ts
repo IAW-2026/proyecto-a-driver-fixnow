@@ -47,7 +47,6 @@ export async function PATCH(
         estimatedPrice: estimatedPrice !== undefined ? estimatedPrice : existingJob.estimatedPrice,
         latitude: latitude !== undefined ? latitude : existingJob.latitude,
         longitude: longitude !== undefined ? longitude : existingJob.longitude,
-        updatedAt: new Date(),
       }
     });
 
