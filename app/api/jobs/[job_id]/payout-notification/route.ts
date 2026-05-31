@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { broadcastToProfessionals } from "../../stream/route";
+import { prisma } from "@/lib/prisma";
 import { MESSAGE_TYPES } from "@/lib/constants";
 
 // Endpoint for sending payout notification to professional after the payment is completed
@@ -17,6 +18,17 @@ export async function POST(
       return NextResponse.json({ 
         error: "professionalId and amount are required" 
       }, { status: 400 });
+    }
+
+    // Check if the professional is registered in the database
+    const professional = await prisma.professional.findUnique({
+      where: { id: professionalId },
+    });
+
+    if (!professional) {
+      return NextResponse.json({ 
+        error: "Professional not found" 
+      }, { status: 404 });
     }
 
     // Simulación de la demora en el procesamiento del pago

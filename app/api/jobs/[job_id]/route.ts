@@ -3,7 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from "../stream/route";
 import { MESSAGE_TYPES } from "@/lib/constants";
 
-// Endpoint for updating a job request
+// Endpoint for updating/cancelling a job request
+// -------------------- TODO --------------------
+// Add cancelling logic (only if job is still PENDING)
 
 export async function PATCH(
   request: NextRequest,
