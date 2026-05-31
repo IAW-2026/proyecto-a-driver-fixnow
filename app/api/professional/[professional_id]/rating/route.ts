@@ -11,7 +11,7 @@ export async function PUT(
 ) {
   try {
     const professionalId = (await params).professional_id;
-    const { rating, avgRating } = await request.json();
+    const { avgRating, rating } = await request.json();
 
     if (!avgRating){
       return NextResponse.json({ 
