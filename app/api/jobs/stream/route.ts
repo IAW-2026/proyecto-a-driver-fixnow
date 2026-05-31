@@ -1,6 +1,9 @@
 // app/api/jobs/stream/route.ts
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MESSAGE_TYPES } from '@/lib/constants';
+
+// Internal app endpoint for SSE stream to professionals about job updates
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +52,7 @@ export async function GET(req: NextRequest) {
 
             if(activeJob && activeJob.status === "ACCEPTED"){
               controller.enqueue(`data: ${JSON.stringify({
-                type: 'active_job',
+                type: MESSAGE_TYPES.ACTIVE_JOB,
                 job: activeJob
               })}\n\n`);
             }
@@ -62,11 +65,12 @@ export async function GET(req: NextRequest) {
                 },
               });
           
-              // For better accuracy, you could filter by distance later
+              // -------------------- TODO --------------------
+              // Filter by distance
 
               if (pendingJobs.length > 0) {
                 controller.enqueue(`data: ${JSON.stringify({
-                  type: 'initial_jobs',
+                  type: MESSAGE_TYPES.INITIAL_JOBS,
                   jobs: pendingJobs
                 })}\n\n`);
               }

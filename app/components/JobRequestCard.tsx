@@ -1,23 +1,30 @@
-// components/JobRequestCard.tsx
 "use client"
-import { MapPin, Clock, DollarSign } from "lucide-react"
+
+import { MapPin, Clock, DollarSign, CalendarDays } from "lucide-react"
+import { parse } from "date-fns"
 
 interface JobRequestCardProps {
   job: {
-    id: string
+    jobId: string
     description: string
     estimatedPrice?: number | null
     latitude?: number
     longitude?: number
+    requestedDate?: string
+    scheduledTime?: String
   }
   onAccept: (jobId: string) => void
   isLoading?: boolean
 }
 
 export default function JobRequestCard({ job, onAccept, isLoading = false }: JobRequestCardProps) {
+  const formattedDate = job.requestedDate ? parse(job.requestedDate+' '+job.scheduledTime, 'dd/MM/yyyy HH:mm', new Date()).toLocaleDateString('es-ES', {
+    weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  }) : "Hace unos momentos"
+
   return (
     <div className="group border border-white/10 bg-[#0A0F1C] hover:border-emerald-500/30 
-                    rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5">
+                    rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/5 flex flex-col justify-between">
       
       <div className="flex items-start gap-4">
         <div className="mt-1">
@@ -40,18 +47,19 @@ export default function JobRequestCard({ job, onAccept, isLoading = false }: Job
             </div>
           )}
 
-          <div className="mt-2 text-xs text-slate-500 flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            Hace unos momentos
-          </div>
+            <div className="mt-2 text-xs flex items-center gap-1.5 ${job.scheduledAt ? 'text-blue-400 font-medium' : 'text-slate-500'}">
+              {job.requestedDate ? <CalendarDays className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+              {job.requestedDate ? `Programado para ${formattedDate}` : formattedDate}
+            </div>
         </div>
       </div>
 
-      <button
-        onClick={() => onAccept(job.id)}
-        disabled={isLoading}
-        className="mt-6 w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 
-                   disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-slate-400
+      {onAccept && (
+        <button
+          onClick={() => onAccept(job.jobId)}
+          disabled={isLoading}
+          className="mt-6 w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 
+                     disabled:from-zinc-700 disabled:to-zinc-700 disabled:text-slate-400
                    text-white font-semibold py-4 rounded-xl transition-all duration-200
                    flex items-center justify-center gap-2 text-base shadow-md shadow-emerald-500/20"
       >
@@ -64,6 +72,7 @@ export default function JobRequestCard({ job, onAccept, isLoading = false }: Job
           "Aceptar Trabajo"
         )}
       </button>
+      )}
     </div>
   )
 }

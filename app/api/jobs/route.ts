@@ -1,83 +1,97 @@
+// app/api/jobs/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from './stream/route';
+import { MESSAGE_TYPES } from "@/lib/constants";
+
+// Endpoint for creating a new job request from the client app
 
 export async function POST(request: Request) {
+  try {
+    const body = await request.json();
 
-    try{
-        const body = await request.json()
-        const {
-            job_id, 
-            client_id,
-            service_type,
-            description,
-            latitude,
-            longitude,
-            estimated_price
-        } = body;
+    // -------------------- TODO --------------------
+    // Verify fields
+    const { 
+      jobId, 
+      clientId, 
+      serviceType, 
+      description, 
+      latitude, 
+      longitude, 
+      estimatedPrice 
+    } = body;
 
-        if(!job_id || !client_id || !service_type || latitude === undefined || longitude === undefined){
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-        }
-
-        const existingJob = await prisma.jobRequest.findUnique({
-            where: { jobId: job_id }
-        })
-
-        if(existingJob){
-            return NextResponse.json({ error: "Job already exists" }, { status: 409 })
-        }
-
-        const newJob = await prisma.jobRequest.create({
-            data: {
-                jobId: job_id,
-                clientId: client_id,
-                serviceType: service_type,
-                description: description || "",
-                latitude,
-                longitude,
-                estimatedPrice: estimated_price || null,
-                status: "PENDING",
-            }
-        });
-
-        const availableProfessionals = await prisma.professional.findMany({
-            where: {
-                serviceType: service_type,
-                status: "ONLINE",
-            },
-                select: { id: true }
-        });
-
-        if(availableProfessionals.length === 0){
-            return NextResponse.json({ 
-                success: true,
-                notifiedCount: 0,
-                message: "No professionals currently available for this service type"
-             }, {status: 200})
-        }
-
-
-        // Notify professionals via SSE stream
-        broadcastToProfessionals(availableProfessionals.map(p => p.id), {
-            type: "NEW_JOB_REQUEST",
-            job_id: newJob.jobId,
-            client_id: newJob.clientId,
-            service_type: newJob.serviceType,
-            description: newJob.description,
-            latitude: newJob.latitude,
-            longitude: newJob.longitude,
-            estimated_price: newJob.estimatedPrice,
-        });
-
-        return NextResponse.json({
-            success: true,
-            notifiedCount: availableProfessionals.length,
-        }, {status: 200})
-
-
-    } catch (error) {
-        console.error("Error processing job request:", error)
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+    // Validate required fields
+    if (!jobId || !clientId || !serviceType || !description || latitude === undefined || longitude === undefined) {
+      return NextResponse.json({ 
+        error: "Missing required fields", 
+        received: Object.keys(body) 
+      }, { status: 400 });
     }
+
+    // Check if job already exists
+    const existing = await prisma.jobRequest.findUnique({
+      where: { jobId: jobId }
+    });
+
+    if (existing) {
+      return NextResponse.json({ error: "Job already exists" }, { status: 409 });
+    }
+
+    // Create job
+    const newJob = await prisma.jobRequest.create({
+      data: {
+        jobId: jobId,
+        clientId: clientId,
+        serviceType: serviceType as any,        // Cast if needed
+        description,
+        latitude,
+        longitude,
+        estimatedPrice: estimatedPrice || null,
+        status: "PENDING",
+      }
+    });
+
+    // Get professionals
+    const availableProfessionals = await prisma.professional.findMany({
+      where: {
+        serviceType: serviceType as any,
+        status: "ONLINE",
+      },
+      select: { id: true }
+    });
+
+    const professionalIds = availableProfessionals.map(p => p.id);
+
+    // Broadcast
+    if (professionalIds.length > 0) {
+      broadcastToProfessionals(professionalIds, {
+        type: MESSAGE_TYPES.NEW_JOB,
+        jobId: newJob.jobId,
+        clientId: newJob.clientId,
+        serviceType: newJob.serviceType,
+        description: newJob.description,
+        latitude: newJob.latitude,
+        longitude: newJob.longitude,
+        estimatedPrice: newJob.estimatedPrice,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    console.log(`Job created: ${jobId} | Notified: ${professionalIds.length}`);
+
+    return NextResponse.json({
+      success: true,
+      notifiedCount: professionalIds.length,
+      jobId: newJob.jobId
+    });
+
+  } catch (error: any) {
+    console.error("Error in /api/jobs:", error);
+    return NextResponse.json({ 
+      error: "Internal Server Error", 
+      message: error.message 
+    }, { status: 500 });
+  }
 }

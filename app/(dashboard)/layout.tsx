@@ -8,7 +8,7 @@ export default function DashboardLayout({
   return (
     // min-h-screen creates the base viewport height limit
     // h-screen md:overflow-hidden keeps the sidebar crisp and prevents double-scrollbars
-    <div className="flex flex-col md:flex-row md:min-h-screen w-full bg-[#030712] text-white overflow-x-hidden">
+    <div className="flex flex-col md:flex-row h-screen w-full bg-[#030712] text-white overflow-hidden">
       
       {/* Persistent Responsive Sidebar Panel */}
       <Sidebar />
