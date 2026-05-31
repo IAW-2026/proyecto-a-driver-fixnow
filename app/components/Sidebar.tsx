@@ -8,6 +8,7 @@ import {
   Menu, 
   X, 
   Home, 
+  Clock,
   History, 
   Star, 
   Settings, 
@@ -21,6 +22,7 @@ export default function Sidebar() {
 
   const navItems = [
     { name: "Inicio", href: "/home", icon: Home },
+    { name: "Trabajos Programados", href: "/scheduled", icon: Clock },
     { name: "Historial de Trabajos", href: "/history", icon: History },
     { name: "Reseñas", href: "/reviews", icon: Star },
     { name: "Configuración de Cuenta", href: "/account", icon: Settings },

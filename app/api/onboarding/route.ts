@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { currentUser } from "@clerk/nextjs/server"
 import { prisma } from "@/lib/prisma"
 
+// Internal app endpoint for onboarding professionals (creating/updating their profile)
+
 export async function POST(request: Request) {
   const user = await currentUser()
   if (!user) return NextResponse.json({error: "Unauthorized"}, { status: 401 })

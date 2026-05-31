@@ -1,6 +1,6 @@
 "use client"
 
-import { SignOutButton, UserButton } from "@clerk/nextjs"
+import { UserButton } from "@clerk/nextjs"
 
 export default function HomeUserMenu() {
   return (

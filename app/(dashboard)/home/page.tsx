@@ -1,10 +1,8 @@
 import { auth, currentUser } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
-import Image from "next/image"
 import { prisma } from "@/lib/prisma"
-import { UserButton } from "@clerk/nextjs"
-import { Briefcase, Clock, ShieldCheck, MapPin } from "lucide-react"
-import StatusToggle from "../../components/StatusToggle"
+import { Briefcase, ShieldCheck, MapPin } from "lucide-react"
+import JobRequestTable from "@/app/components/JobRequestPanel"
 
 export default async function HomePage() {
   const { userId } = await auth()
@@ -15,17 +13,16 @@ export default async function HomePage() {
     redirect("/")
   }
 
-  // Fetch the professional's local database profile including their schedule
+  // Fetch the professional's local database profile
   const professional = await prisma.professional.findUnique({
     where: { id: userId },
   })
 
   // Guard: If they authenticated but haven't onboarded yet, send them back to onboarding
   if (!professional) {
-    redirect("/onboarding") // Adjust to your actual onboarding route path
+    redirect("/onboarding")
   }
 
-  // Format the primary service label neatly
   const formatService = (type: string | null) => {
     if (!type) return "No asignado"
     const mapping: Record<string, string> = {
@@ -66,7 +63,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          {/* Card 2: Rating */}
+          {/* Card 2: Cover Radius */}
           <div className="rounded-2xl border border-white/5 bg-[#0B0F19] p-6 flex items-start gap-4">
             <div className="rounded-xl bg-blue-500/10 p-3 text-blue-400">
               <MapPin className="h-6 w-6" />
@@ -93,7 +90,7 @@ export default async function HomePage() {
         </div>
 
         {/* 3. WORK OVERVIEW BLOCK */}
-        <StatusToggle 
+        <JobRequestTable 
           professionalId={professional.id}
           initialStatus={professional.status} // Passes: ONLINE | OFFLINE | BUSY
           latitude={professional.latitude}

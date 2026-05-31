@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+// Internal app endpoint for updating professional status (e.g. ONLINE, OFFLINE, BUSY)
+
 export async function PATCH(request: Request) {
   try {
     const body = await request.json()

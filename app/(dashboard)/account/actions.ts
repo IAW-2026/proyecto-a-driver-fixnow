@@ -2,7 +2,7 @@
 
 import { auth } from "@clerk/nextjs/server"
 import { revalidatePath } from "next/cache"
-import { prisma } from "@/lib/prisma" // Ajusta según dónde exportes tu instancia de Prisma
+import { prisma } from "@/lib/prisma"
 
 export interface ProfessionalProfileData {
   firstName: string

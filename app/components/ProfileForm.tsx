@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { SignOutButton } from "@clerk/nextjs"
 
+// -------------------- TODO --------------------
+// Add all this to an external enum
 const services = [
   { value: "PLOMERIA", label: "Plomería" },
   { value: "GAS", label: "Gas" },
