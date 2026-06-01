@@ -11,3 +11,19 @@ export const MESSAGE_TYPES = {
 } as const;
 
 export type NotificationType = typeof MESSAGE_TYPES[keyof typeof MESSAGE_TYPES];
+
+export const SERVICE_TYPES = {
+  PLOMERIA: 'PLOMERIA',
+  GAS: 'GAS',
+  ELECTRICIDAD: 'ELECTRICIDAD',
+} as const;
+
+export type ServiceType = typeof SERVICE_TYPES[keyof typeof SERVICE_TYPES];
+
+export const PROFESSIONAL_STATUS = {
+  ONLINE: 'ONLINE',
+  OFFLINE: 'OFFLINE',
+  BUSY: 'BUSY',
+} as const;
+
+export type ProfessionalStatus = typeof PROFESSIONAL_STATUS[keyof typeof PROFESSIONAL_STATUS];
