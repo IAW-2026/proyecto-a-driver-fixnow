@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -- ENUMS --
+
+enum ServiceType {
+  PLOMERIA
+  ELECTRICIDAD
+  GAS
+}
+
+enum Status {
+  ONLINE
+  BUSY
+  OFFLINE
+}
+
+enum JobStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// -- MODELS --
+
+model Professional {
+  id          String       @id
+  firstName   String       @map("first_name")
+  lastName    String       @map("last_name")
+  email       String       @unique
+  phoneNumber String       @map("phone_number")
+  serviceType ServiceType? @map("service_type")
+  rating      Float        @default(-1.0)
+
+  latitude  Float
+  longitude Float
+
+  radiusKm   Int     @map("radious_km")
+  status     Status  @default(OFFLINE)
+  isVerified Boolean @default(false) @map("is_verified")
+
+  activeJobID String? @map("active_job_id")
+
+  jobRequest JobRequest[] @relation("AssignedJobs")
+
+  @@map("professionals")
+}
+
+model JobRequest {
+  id       String @id @default(cuid())
+  jobId    String @unique @map("job_id") // Client's original job_id
+  clientId String @map("client_id")
+
+  serviceType    ServiceType @map("service_type")
+  description    String?
+  latitude       Float
+  longitude      Float
+  estimatedPrice Float?      @map("estimated_price")
+
+  status     JobStatus @default(PENDING)
+  assignedTo String?   @map("assigned_to") // Professional ID when accepted
+
+  // Optional: Link to Professional
+  professional Professional? @relation("AssignedJobs", fields: [assignedTo], references: [id], onDelete: SetNull)
+
+  @@index([serviceType, status])
+  @@index([assignedTo])
+  @@map("job_requests")
+}

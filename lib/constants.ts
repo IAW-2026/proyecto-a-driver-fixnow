@@ -1,0 +1,29 @@
+export const MESSAGE_TYPES = {
+  NEW_JOB: 'NEW_JOB',
+  ACTIVE_JOB: 'ACTIVE_JOB',
+  INITIAL_JOBS: 'INITIAL_JOBS',
+  JOB_UPDATED: 'JOB_UPDATED',
+  JOB_REMOVED: 'JOB_REMOVED',
+  JOB_ACCEPTED: 'JOB_ACCEPTED',
+  JOB_COMPLETED: 'JOB_COMPLETED',
+  PAYOUT_RECEIVED: 'PAYOUT_RECEIVED',
+  NEW_RATING: 'NEW_RATING',
+} as const;
+
+export type NotificationType = typeof MESSAGE_TYPES[keyof typeof MESSAGE_TYPES];
+
+export const SERVICE_TYPES = {
+  PLOMERIA: 'PLOMERIA',
+  GAS: 'GAS',
+  ELECTRICIDAD: 'ELECTRICIDAD',
+} as const;
+
+export type ServiceType = typeof SERVICE_TYPES[keyof typeof SERVICE_TYPES];
+
+export const PROFESSIONAL_STATUS = {
+  ONLINE: 'ONLINE',
+  OFFLINE: 'OFFLINE',
+  BUSY: 'BUSY',
+} as const;
+
+export type ProfessionalStatus = typeof PROFESSIONAL_STATUS[keyof typeof PROFESSIONAL_STATUS];
