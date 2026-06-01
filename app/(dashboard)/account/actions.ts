@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma"
 export interface ProfessionalProfileData {
   firstName: string
   lastName: string
-  phone: string
+  phoneNumber: string
   radiusKm: number
   email: string
 }
@@ -47,7 +47,7 @@ export async function updateAccountProfile(data: ProfessionalProfileData) {
     data: {
       firstName: data.firstName,
       lastName: data.lastName,
-      phoneNumber: data.phone,
+      phoneNumber: data.phoneNumber,
       radiusKm: safeRadius,
       email: data.email,
     }

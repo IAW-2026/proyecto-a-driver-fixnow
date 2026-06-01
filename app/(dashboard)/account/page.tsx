@@ -115,8 +115,8 @@ export default function AccountPage() {
               type="number" 
               maxLength={7}
               pattern="[0-9]{7}"
-              value={profile?.phone ?? ""} 
-              onChange={(e) => setProfile(prev => prev ? { ...prev, phone: e.target.value } : null)}
+              value={profile?.phoneNumber ?? ""} 
+              onChange={(e) => setProfile(prev => prev ? { ...prev, phoneNumber: e.target.value } : null)}
               className="w-full rounded-xl border border-white/5 bg-[#030712] px-4 py-3 text-sm text-white outline-none focus:border-[#FFB800]/40 transition" 
             />
           </div>
