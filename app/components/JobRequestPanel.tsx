@@ -1,12 +1,14 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { 
   Briefcase, Radio, Loader2, ShieldAlert, CheckCircle, 
   DollarSign, FileText, Star, ChevronLeft, ChevronRight 
 } from "lucide-react"
 import JobRequestCard from "./JobRequestCard"
-import { MESSAGE_TYPES } from "@/lib/constants"
+import { MESSAGE_TYPES, ProfessionalStatus, PROFESSIONAL_STATUS } from "@/lib/constants"
+import { ServiceType } from "../generated/prisma/browser"
+import { updateProfessionalStatus, updateProfessionalLocation } from "../(dashboard)/home/actions"
 
 // -------------------- TODO --------------------
 // Add cancel job flow
@@ -26,7 +28,7 @@ interface jobRequest {
 
 interface JobRequestProps {
   professionalId: string
-  initialStatus: "ONLINE" | "OFFLINE" | "BUSY"
+  initialStatus: ProfessionalStatus
   latitude: number
   longitude: number
 }
@@ -37,6 +39,8 @@ interface ToastNotification {
   desc: string
   type: "payout" | "rating"
 }
+
+const LOCATION_REFRESH_INTERVAL = 7 * 60 * 1000 // Cada 7 minutos
 
 // --- UTILS ---
 function getBrowserLocation(): Promise<GeolocationPosition> {
@@ -58,12 +62,12 @@ export default function JobRequestTable({
   longitude,
 }: JobRequestProps) {
   // --- CORE STATE ---
-  const [status, setStatus] = useState<"ONLINE" | "OFFLINE" | "BUSY">(initialStatus)
+  const [status, setStatus] = useState<ProfessionalStatus>(initialStatus)
   const [pendingJobs, setPendingJobs] = useState<jobRequest[]>([])
   const [currentJob, setCurrentJob] = useState<jobRequest | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [loadingStep, setLoadingStep] = useState<"gps" | "saving" | null>(null)
   const [acceptingJobId, setAcceptingJobId] = useState<string | null>(null)
+  const [coords, setCoords] = useState({ latitude, longitude })
 
   // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1)
@@ -76,8 +80,8 @@ export default function JobRequestTable({
   const [processingState, setProcessingState] = useState<"idle" | "saving" | "waiting_webhooks">("idle")
   const [toasts, setToasts] = useState<ToastNotification[]>([])
 
-  const isBusy = status === "BUSY"
-  const isOnline = status === "ONLINE"
+  const isBusy = status === PROFESSIONAL_STATUS.BUSY
+  const isOnline = status === PROFESSIONAL_STATUS.ONLINE
 
   // SSE Connection
   useEffect(() => {
@@ -92,7 +96,7 @@ export default function JobRequestTable({
         case MESSAGE_TYPES.ACTIVE_JOB:
           setCurrentJob(data.job)
           setPendingJobs([])
-          setStatus("BUSY")
+          setStatus(PROFESSIONAL_STATUS.BUSY)
           break
         case MESSAGE_TYPES.INITIAL_JOBS:
           setPendingJobs(data.jobs || [])
@@ -113,17 +117,17 @@ export default function JobRequestTable({
         case MESSAGE_TYPES.JOB_ACCEPTED:
           setCurrentJob(data)
           setPendingJobs([])
-          setStatus("BUSY")
+          setStatus(PROFESSIONAL_STATUS.BUSY)
           break
         case MESSAGE_TYPES.JOB_COMPLETED:
           setCurrentJob(null)
-          setStatus("ONLINE")
+          setStatus(PROFESSIONAL_STATUS.ONLINE)
           break
         case MESSAGE_TYPES.PAYOUT_RECEIVED:
           addToast(data.title, data.desc, "payout")
           break
         case MESSAGE_TYPES.NEW_RATING:
-          addToast(data.title, "Se actualizó tu rating", "rating")
+          addToast(data.title, data.body, "rating")
           break
       }
     }
@@ -132,43 +136,66 @@ export default function JobRequestTable({
   }, [professionalId, currentJob?.jobId])
 
   useEffect(() => {
+    if(!professionalId || status === PROFESSIONAL_STATUS.OFFLINE) return
+
+    const refreshLocation = async () => {
+      try {
+        const position = await getBrowserLocation()
+        const lat = position.coords.latitude
+        const lng = position.coords.longitude
+        await updateProfessionalLocation(lat, lng)
+        setCoords({ latitude: lat, longitude: lng })
+        console.log("Ubicación actualizada:", lat, lng)
+      } catch (err) {
+        console.error("Error obteniendo ubicación:", err)
+      }
+    }
+    
+    refreshLocation() // Actualiza al montar
+
+    const intervalId = setInterval(refreshLocation, LOCATION_REFRESH_INTERVAL)
+
+    return () => clearInterval(intervalId)
+  }, [professionalId, status])
+
+  useEffect(() => {
     const maxPages = Math.ceil(pendingJobs.length / JOBS_PER_PAGE)
     if (currentPage > maxPages && maxPages > 0) {
       setCurrentPage(maxPages)
     }
-  }, [pendingJobs.length, currentPage])
+  }, [pendingJobs.length, currentPage]);
 
   // --- DEV TOOLS ---
   const simulateIncomingJob = async () => {
-  const mockJob = {
-    jobId: `mock_${Date.now()}`,
-    clientId: "cliente_simulado_001",
-    serviceType: "GAS",     //-------------------- TODO -------------------- 
-                            // Refactor serviceType a enum en el futuro
-    description: "Reparación de fuga de gas en cocina (Prueba simulada)",
-    latitude: latitude + (Math.random() * 0.02 - 0.01),
-    longitude: longitude + (Math.random() * 0.02 - 0.01),
-    estimatedPrice: 45000 + Math.floor(Math.random() * 30000),
-  };
+    const mockJob = {
+      jobId: `mock_${Date.now()}`,
+      clientId: "cliente_simulado_001",
+      serviceType: ServiceType.GAS,     //-------------------- TODO -------------------- 
+                              // Refactor serviceType a enum en el futuro
+      description: "Reparación de fuga de gas en cocina (Prueba simulada)",
+      latitude: coords.latitude + (Math.random() * 0.02 - 0.01),
+      longitude: coords.longitude + (Math.random() * 0.02 - 0.01),
+      estimatedPrice: 45000 + Math.floor(Math.random() * 30000),
+    };
 
-  try {
-    const res = await fetch("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(mockJob)
-    });
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mockJob)
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      console.error("Server Error:", data);
-      alert(`Error ${res.status}: ${data.error || 'Unknown error'}`);
-    } else {
-      console.log("Simulated job sent successfully:", data);
+      if (!res.ok) {
+        console.error("Server Error:", data);
+        alert(`Error ${res.status}: ${data.error || 'Unknown error'}`);
+      } else {
+        console.log("Simulated job sent successfully:", data);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
     }
-  } catch (err) {
-    console.error("Fetch error:", err);
-  }
 };
 
   // --- TOAST NOTIFICATIONS ---
@@ -199,7 +226,7 @@ export default function JobRequestTable({
         setCurrentJob(job)
         setFinalPrice(job.estimatedPrice?.toString() || "")
         setFinalDescription(job.description)
-        setStatus("BUSY")
+        setStatus(PROFESSIONAL_STATUS.BUSY)
         setPendingJobs([])
       }
     } catch (err) {
@@ -211,8 +238,9 @@ export default function JobRequestTable({
 
   function handleToggleChange() {
     if (isBusy || isLoading) return
-    const nextStatus = isOnline ? "OFFLINE" : "ONLINE"
-    updateProfessionalStatus(nextStatus, nextStatus === "ONLINE")
+    const nextStatus = isOnline ? PROFESSIONAL_STATUS.OFFLINE : PROFESSIONAL_STATUS.ONLINE
+    updateProfessionalStatus(nextStatus)
+    setStatus(nextStatus)
   }
 
   async function handleFinishJob(e: React.FormEvent) {
@@ -233,7 +261,7 @@ export default function JobRequestTable({
       setProcessingState("waiting_webhooks")
       
       // 2. Mock de retraso de Webhooks (entre 3 y 8 segundos cada uno)
-      fetch(`/api/jobs/${currentJob.jobId}/payout-notification`, {
+      fetch(`/api/jobs/${currentJob.jobId}/payout-notifications`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ professionalId, amount: finalPrice })
@@ -243,8 +271,8 @@ export default function JobRequestTable({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-            rating: 5, 
-            totalReviews: 10
+          avgRating: 4.3, 
+          rating: 5, 
         })
       });
 
@@ -252,47 +280,12 @@ export default function JobRequestTable({
       setCurrentJob(null)
       setShowCompletionForm(false)
       setProcessingState("idle")
-      await updateProfessionalStatus("ONLINE", true)
+      await updateProfessionalStatus(PROFESSIONAL_STATUS.ONLINE)
 
     } catch (err) {
       console.error("Failed to complete job:", err)
       alert("Error al finalizar el trabajo.")
       setProcessingState("idle")
-    }
-  }
-
-  // -------------------- TODO --------------------
-  // Add cancel job handler, which would be similar to finish but hitting a different endpoint
-
-  async function updateProfessionalStatus(nextStatus: "ONLINE" | "OFFLINE", includeCoords: boolean) {
-    setIsLoading(true)
-    let coordsPayload = {}
-
-    if (includeCoords) {
-      setLoadingStep("gps")
-      try {
-        const position = await getBrowserLocation()
-        coordsPayload = { latitude: position.coords.latitude, longitude: position.coords.longitude }
-      } catch (err) {
-        console.warn("Location check failed")
-        coordsPayload = { latitude, longitude }
-      }
-    }
-
-    setLoadingStep("saving")
-    try {
-      const res = await fetch("/api/professional/status", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ professionalId, status: nextStatus, ...coordsPayload }),
-      })
-      if (!res.ok) throw new Error("Server rejected transition")
-      setStatus(nextStatus)
-    } catch (err) {
-      console.error("Failed executing request:", err)
-    } finally {
-      setIsLoading(false)
-      setLoadingStep(null)
     }
   }
 
@@ -340,17 +333,17 @@ export default function JobRequestTable({
               <h2 className="text-xl font-bold">Estado de Disponibilidad</h2>
               <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold tracking-wide uppercase transition-colors duration-300
                 ${isOnline ? "bg-emerald-500/10 text-emerald-400" : ""}
-                ${status === "OFFLINE" ? "bg-slate-500/10 text-slate-400" : ""}
+                ${status === PROFESSIONAL_STATUS.OFFLINE ? "bg-slate-500/10 text-slate-400" : ""}
                 ${isBusy ? "bg-amber-500/10 text-amber-400 animate-pulse" : ""}
               `}>
                 <span className={`h-1.5 w-1.5 rounded-full transition-transform duration-300
                   ${isOnline ? "bg-emerald-400 scale-110 shadow-[0_0_8px_rgba(52,211,153,0.5)]" : ""}
-                  ${status === "OFFLINE" ? "bg-slate-400" : ""}
+                  ${status === PROFESSIONAL_STATUS.OFFLINE ? "bg-slate-400" : ""}
                   ${isBusy ? "bg-amber-400" : ""}
                 `} />
-                {status === "ONLINE" && "En Línea"}
-                {status === "OFFLINE" && "Desconectado"}
-                {status === "BUSY" && "Trabajando"}
+                {status === PROFESSIONAL_STATUS.ONLINE && "En Línea"}
+                {status === PROFESSIONAL_STATUS.OFFLINE && "Desconectado"}
+                {status === PROFESSIONAL_STATUS.BUSY && "Trabajando"}
               </span>
             </div>
             <p className="text-slate-400 text-sm max-w-xl">
@@ -500,7 +493,7 @@ export default function JobRequestTable({
                 <div className="py-12 text-center">
                   <p className="text-slate-400 font-medium">Esperando nuevas solicitudes de servicio...</p>
                   <p className="text-slate-600 text-xs mt-2">
-                    Última posición guardada: ({latitude.toFixed(4)}, {longitude.toFixed(4)})
+                    Última posición guardada: ({coords.latitude.toFixed(4)}, {coords.longitude.toFixed(4)})
                   </p>
                 </div>
               ) : (
