@@ -12,12 +12,15 @@ Esta app corresponde al rol del conductor en el proyecto de tipo **A (Transporte
 Brinda toda la funcionalidad correspondiente al mismo, permitiendo la creación de su cuenta, notificandole de la creación de nuevas solicitudes de trabajo y permitiendole aceptarlas.
 También le permite consultar por solicitudes de trabajo programadas para fechas futuras, así como acceder a su historial de trabajos y las reseñas que le dejaron sus clientes.
 
+**Nota:** El trabajo simulado SIEMPRE tiene GAS como tipo de servicio, por lo que solo puede ser visto por un profesional con ese oficio
+
 
 ## **__Falta implementar:__**
 
 ### **Endpoints:**
     Cancelación de un request por parte del cliente dentro de /api/[job_id].
     Autenticación en los endpoints (tanto internos como expuestos).
+    Discutir y agregar los endpoints necesarios para el flujo definidos en la etapa-1
 
 ### **Conexiones con otras APIs:** (Etapa 3)
     Hacer fetch de los trabajos realizados a Client App.
