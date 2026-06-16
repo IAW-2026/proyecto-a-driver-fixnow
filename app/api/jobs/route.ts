@@ -13,22 +13,28 @@ export async function POST(request: Request) {
     // -------------------- TODO --------------------
     // Verify fields
     const { 
-      jobId, 
-      clientId, 
-      serviceType, 
+      job_id, 
+      client_id,
+      client_full_name, 
+      service_type, 
       description, 
-      latitude, 
-      longitude, 
-      estimatedPrice 
+      location,
+      estimated_price 
     } = body;
 
     // Validate required fields
-    if (!jobId || !clientId || !serviceType || !description || latitude === undefined || longitude === undefined) {
+    if (!job_id || !client_id || !service_type || !description || location?.lat === undefined || location?.lng === undefined) {
       return NextResponse.json({ 
         error: "Missing required fields", 
         received: Object.keys(body) 
       }, { status: 400 });
     }
+
+    const jobId = job_id;
+    const clientId = client_id;
+    const clientName = client_full_name;
+    const serviceType = service_type;
+    const estimatedPrice = estimated_price !== undefined ? Number(estimated_price) : null;
 
     // Check if job already exists
     const existing = await prisma.jobRequest.findUnique({
@@ -44,10 +50,10 @@ export async function POST(request: Request) {
       data: {
         jobId: jobId,
         clientId: clientId,
-        serviceType: serviceType as any,        // Cast if needed
+        serviceType: serviceType,        // Cast if needed
         description,
-        latitude,
-        longitude,
+        latitude: location.lat,
+        longitude: location.lng,
         estimatedPrice: estimatedPrice || null,
         status: "PENDING",
       }

@@ -107,7 +107,7 @@ export default function JobRequestTable({
             setPendingJobs(prev => [data, ...prev])
           }
           break
-        case MESSAGE_TYPES.JOB_REMOVED:
+        case MESSAGE_TYPES.JOB_CANCELLED:
           setPendingJobs(prev => prev.filter(j => j.jobId !== data.jobId))
           if (currentJob?.jobId === data.jobId) setCurrentJob(null)
           break
@@ -254,27 +254,27 @@ export default function JobRequestTable({
       const res = await fetch("/api/jobs/complete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId: currentJob.jobId, professionalId: professionalId }),
+        body: JSON.stringify({ jobId: currentJob.jobId, professionalId: professionalId, price: finalPrice, description: finalDescription }),
       })
       if (!res.ok) throw new Error("Failed to complete job")
 
       setProcessingState("waiting_webhooks")
       
       // 2. Mock de retraso de Webhooks (entre 3 y 8 segundos cada uno)
-      fetch(`/api/jobs/${currentJob.jobId}/payout-notifications`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ professionalId, amount: finalPrice })
-      });
+      // fetch(`/api/jobs/${currentJob.jobId}/payout-notifications`, {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ professionalId, amount: finalPrice })
+      // });
 
-      fetch(`/api/professionals/${professionalId}/rating`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          avgRating: 4.3, 
-          rating: 5, 
-        })
-      });
+      // fetch(`/api/professionals/${professionalId}/rating`, {
+      //   method: "PUT",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ 
+      //     avgRating: 4.3, 
+      //     rating: 5, 
+      //   })
+      // });
 
       // 3. Limpieza y vuelta a ONLINE
       setCurrentJob(null)

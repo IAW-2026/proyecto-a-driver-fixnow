@@ -12,7 +12,8 @@ export async function POST(
 
   try {
     const jobId = (await params).job_id;
-    const { professionalId, amount } = await request.json();
+    const { professional_id, amount } = await request.json();
+    const professionalId = professional_id;
 
     if (!professionalId || !amount) {
       return NextResponse.json({ 
@@ -30,9 +31,6 @@ export async function POST(
         error: "Professional not found" 
       }, { status: 404 });
     }
-
-    // Simulación de la demora en el procesamiento del pago
-    await new Promise(resolve => setTimeout(resolve, 3000));
 
     // Notify the professional via SSE
     broadcastToProfessionals([professionalId], {

@@ -7,6 +7,19 @@ import { MESSAGE_TYPES } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 
+// Auxiliary function for calculated distance between two lat/lng points (Haversine formula)
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+  const R = 6371; // Earth radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
 // In-memory active connections: professionalId → controller
 const activeConnections = new Map<string, ReadableStreamDefaultController>();
 
@@ -31,6 +44,9 @@ export async function GET(req: NextRequest) {
           serviceType: true,
           activeJobID: true,
           status: true,
+          latitude: true,
+          longitude: true,
+          radius: true
         }
       });
 
@@ -41,6 +57,8 @@ export async function GET(req: NextRequest) {
         })}\n\n`);
         return;
       }
+
+
 
       // === Initial Sync: Send all currently pending jobs for this professional ===
       try {
@@ -64,9 +82,20 @@ export async function GET(req: NextRequest) {
                   status: 'PENDING',
                 },
               });
-          
-              // -------------------- TODO --------------------
-              // Filter by distance
+
+              // Filter jobs by distance to professional's location
+              for (const job of pendingJobs) {
+                const distance = calculateDistance(
+                  job.latitude,
+                  job.longitude,
+                  professional.latitude,
+                  professional.longitude
+                );
+                if (distance > professional.radius) {
+                  // Remove jobs that are outside the professional's radius
+                  pendingJobs.splice(pendingJobs.indexOf(job), 1);
+                }
+              }
 
               if (pendingJobs.length > 0) {
                 controller.enqueue(`data: ${JSON.stringify({

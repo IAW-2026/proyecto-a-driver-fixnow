@@ -27,6 +27,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Job is no longer available" }, { status: 410 });
     }
 
+    const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
+
+    const response = await fetch(`${apiURL}/jobs/${jobId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.INTERNAL_API_SECRET_KEY}`
+      },
+      body: JSON.stringify({
+        status: "accepted",
+        professional_id: professionalId
+      })
+    });
+
+    if (!response.ok) {
+      console.error("Failed to update job status in external API:", await response.text());
+    }
+
     // Update job status and assign professional
     const updatedJob = await prisma.jobRequest.update({
       where: { jobId: jobId },
@@ -66,7 +84,7 @@ export async function POST(request: Request) {
     // Notify others to remove the job
     const otherProfessionals = allCandidateIds.filter(id => id !== professionalId);
     broadcastToProfessionals(otherProfessionals, {
-      type: MESSAGE_TYPES.JOB_REMOVED,
+      type: MESSAGE_TYPES.JOB_CANCELLED,
       jobId,
       reason: 'Another professional accepted this job'
     });
