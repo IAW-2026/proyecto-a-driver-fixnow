@@ -1,18 +1,29 @@
 // app/api/jobs/scheduled/route.ts
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
 // Internal app endpoint for fetching scheduled jobs
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const serviceType = searchParams.get("serviceType");
-    const professionalId = searchParams.get("professionalId");
-    
-    if (!serviceType || !professionalId) {
-      return NextResponse.json({ error: "Missing serviceType or professionalId" }, { status: 400 });
+    const { userId } = await auth();
+
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Fetch the professional's local database profile to get their profession
+    const professional = await prisma.professional.findUnique({
+      where: { id: userId },
+    });
+
+    if (!professional) {
+      return NextResponse.json({ error: "Professional profile not found" }, { status: 404 });
+    }
+
+    const serviceType = String(professional.serviceType);
+    const professionalId = String(professional.id);
     const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
     const externalUrl = new URL(`${apiURL}/jobs/scheduled`);
 
