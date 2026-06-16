@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
           status: true,
           latitude: true,
           longitude: true,
-          radius: true
+          radiusKm: true
         }
       });
 
@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
                   professional.latitude,
                   professional.longitude
                 );
-                if (distance > professional.radius) {
+                if (distance > professional.radiusKm) {
                   // Remove jobs that are outside the professional's radius
                   pendingJobs.splice(pendingJobs.indexOf(job), 1);
                 }
