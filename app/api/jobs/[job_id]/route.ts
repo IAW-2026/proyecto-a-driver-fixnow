@@ -3,9 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from "../stream/route";
 import { MESSAGE_TYPES } from "@/lib/constants";
 
-// Endpoint for updating/cancelling a job request
-// -------------------- TODO --------------------
-// Add cancelling logic (only if job is still PENDING)
+// Endpoint for updating a job request
 
 export async function PATCH(
   request: NextRequest,
@@ -16,15 +14,18 @@ export async function PATCH(
   try {
     const body = await request.json();
     const { 
+      service_type,
       description, 
-      estimatedPrice, 
-      latitude, 
-      longitude 
+      estimated_price, 
+      location
     } = body;
 
-    if (!description && estimatedPrice === undefined && latitude === undefined && longitude === undefined) {
+    if (! service_type && !description && estimated_price === undefined && location?.lat === undefined && location?.lng === undefined) {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
+
+    const estimatedPrice = estimated_price
+    const serviceType = service_type;
 
     // Find the existing job
     const existingJob = await prisma.jobRequest.findUnique({
@@ -45,10 +46,11 @@ export async function PATCH(
     const updatedJob = await prisma.jobRequest.update({
       where: { jobId: jobId },
       data: {
+        serviceType: serviceType !== undefined ? serviceType as any : existingJob.serviceType,
         description: description !== undefined ? description : existingJob.description,
         estimatedPrice: estimatedPrice !== undefined ? estimatedPrice : existingJob.estimatedPrice,
-        latitude: latitude !== undefined ? latitude : existingJob.latitude,
-        longitude: longitude !== undefined ? longitude : existingJob.longitude,
+        latitude: location?.lat !== undefined ? location.lat : existingJob.latitude,
+        longitude: location?.lng !== undefined ? location.lng : existingJob.longitude,
       }
     });
 

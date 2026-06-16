@@ -8,10 +8,10 @@ import { MESSAGE_TYPES } from "@/lib/constants";
 
 export async function POST(request: Request) {
   try {
-    const { jobId, professionalId } = await request.json();
+    const { jobId, professionalId, price, description } = await request.json();
 
-    if (!jobId || !professionalId) {
-      return NextResponse.json({ error: "Missing jobId or professionalId" }, { status: 400 });
+    if (!jobId || !professionalId || price === undefined || !description) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Get the job to verify it belongs to this professional
@@ -27,6 +27,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "This job is not assigned to you" }, { status: 403 });
     }
 
+    const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
+
+    const response = await fetch(`${apiURL}/jobs/${jobId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.INTERNAL_API_SECRET_KEY}`
+      },
+      body: JSON.stringify({
+        status: "completed",
+        price,
+        description
+      })
+    });
+    
+    if (!response.ok) {
+      console.error("Failed to send payout notification:", await response.text());
+    }
+
     // Delete the JobRequest from the database
     await prisma.jobRequest.delete({
       where: { jobId: jobId }
@@ -40,9 +59,6 @@ export async function POST(request: Request) {
         status: 'ONLINE'
       }
     });
-
-    // -------------------- TODO --------------------
-    // Notify the client app that the job was completed and update the price if needed
 
     // Notify the professional (success)
     broadcastToProfessionals([professionalId], {
