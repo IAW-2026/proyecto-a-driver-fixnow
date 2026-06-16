@@ -16,14 +16,15 @@ export async function GET(request: Request) {
     // Fetch the professional's local database profile to get their profession
     const professional = await prisma.professional.findUnique({
       where: { id: userId },
+      select: { id: true, serviceType: true },
     });
 
-    if (!professional) {
-      return NextResponse.json({ error: "Professional profile not found" }, { status: 404 });
+    if (!professional || !professional.serviceType) {
+      return NextResponse.json({ error: "Professional profile or service type not found" }, { status: 404 });
     }
 
-    const serviceType = String(professional.serviceType);
-    const professionalId = String(professional.id);
+    const serviceType = professional.serviceType;
+    const professionalId = professional.id;
     const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
     const externalUrl = new URL(`${apiURL}/jobs/scheduled`);
 
