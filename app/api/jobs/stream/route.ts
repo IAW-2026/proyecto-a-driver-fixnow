@@ -2,6 +2,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MESSAGE_TYPES } from '@/lib/constants';
+import { auth } from '@clerk/nextjs/server'
 
 // Internal app endpoint for SSE stream to professionals about job updates
 
@@ -24,11 +25,12 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 const activeConnections = new Map<string, ReadableStreamDefaultController>();
 
 export async function GET(req: NextRequest) {
-  const professionalId = req.nextUrl.searchParams.get('professionalId');
 
-  if (!professionalId) {
-    return new Response('professionalId is required', { status: 400 });
-  }
+  const { userId } = await auth();
+
+  if ( !userId ) return new Response('Unauthorized', {status: 401})
+
+  const professionalId = userId;
 
   const stream = new ReadableStream({
     async start(controller) {

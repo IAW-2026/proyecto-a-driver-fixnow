@@ -1,11 +1,28 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-
-// Endpoint for the professional to cancel a job request
+import { auth } from "@clerk/nextjs/server"
+import { responseCookiesToRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
+// Internal endpoint for the professional to cancel a job request
 
 export async function POST(request: Request) {
     try {
-        const { jobId, professionalId, cancellationReason } = await request.json();
+        const { userId } = await auth();
+        if( !userId ){
+            return NextResponse.json({ error: "Unauthorized"}, { status: 401 })
+        }
+    
+        const professionalId = userId
+    
+        const isProfessional = await prisma.professional.findUnique({
+            where: { id: professionalId },
+            select: { id: true }
+        });
+    
+        if(!isProfessional){
+            return NextResponse.json({error: "Forbidden: No eres un profesional registrado"}, { status: 403 })
+        }
+
+        const { jobId, cancellationReason } = await request.json();
         if (!jobId || !cancellationReason || !professionalId) {
             return NextResponse.json({ error: "Missing fields" }, { status: 400 });
         }
@@ -21,14 +38,10 @@ export async function POST(request: Request) {
         if (job.assignedTo !== professionalId) {
             return NextResponse.json({ error: "This job is not assigned to you" }, { status: 403 });
         }
-        // Delete the job from the database
-        await prisma.jobRequest.delete({
-            where: { jobId: jobId }
-        });
 
         // Notify the client app the job was cancelled
         const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
-        await fetch(`${apiURL}/jobs/${jobId}/cancellation`, {
+        const response = await fetch(`${apiURL}/jobs/${jobId}/cancellation`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -37,6 +50,16 @@ export async function POST(request: Request) {
             body: JSON.stringify({
                 cancellation_reason: cancellationReason
             })
+        });
+
+        if(!response.ok){
+            console.error("Failed to notify the client app", await response.text())
+            return NextResponse.json({error: "Failed to notify the client app"}, {status: 502})
+        }
+
+        // Delete the job from the database
+        await prisma.jobRequest.delete({
+            where: { jobId: jobId }
         });
 
         return NextResponse.json({
