@@ -3,14 +3,33 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from "../stream/route";
 import { MESSAGE_TYPES } from "@/lib/constants";
+import { auth } from "@clerk/nextjs/server"
 
 // Internal app endpoint for marking a job as completed by a professional
 
 export async function POST(request: Request) {
   try {
-    const { jobId, professionalId, price, description } = await request.json();
 
-    if (!jobId || !professionalId || price === undefined || !description) {
+    const { userId } = await auth();
+    if( !userId ){
+        return NextResponse.json({ error: "Unauthorized"}, { status: 401 })
+    }
+
+    const professionalId = userId
+
+    const isProfessional = await prisma.professional.findUnique({
+        where: { id: professionalId },
+        select: { id: true }
+    });
+
+    if(!isProfessional){
+        return NextResponse.json({error: "Forbidden: No eres un profesional registrado"}, { status: 403 })
+    }
+    
+
+    const { jobId, price, description } = await request.json();
+
+    if (!jobId || price === undefined || !description) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -44,6 +63,7 @@ export async function POST(request: Request) {
     
     if (!response.ok) {
       console.error("Failed to send payout notification:", await response.text());
+      return NextResponse.json({error: "Failed to notify the client app"}, {status: 502})
     }
 
     // Delete the JobRequest from the database

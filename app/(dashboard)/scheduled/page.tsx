@@ -5,7 +5,7 @@ import { CalendarClock, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
 
 const ITEMS_PER_PAGE = 9
 
-export default function ScheduledJobsTab({ professionalServiceType, professionalId }: { professionalServiceType: string; professionalId: string }) {
+export default function ScheduledJobsTab({ professionalId }: { professionalId: string }) {
   const [jobs, setJobs] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -19,15 +19,14 @@ export default function ScheduledJobsTab({ professionalServiceType, professional
         setIsLoading(true)
         setError(null)
 
-        const res = await fetch(`/api/jobs/scheduled?serviceType=${professionalServiceType}`)
+        const res = await fetch(`/api/jobs/scheduled`)
 
         if (!res.ok) throw new Error("Failed to fetch scheduled jobs")
         
         const data = await res.json()
         
-        setJobs(data.jobs || [])
+        setJobs(Array.isArray(data) ? data : (data.jobs || []))
       } catch (error) {
-        setError("Failed to fetch scheduled jobs")
         setError((error as Error).message)
       } finally {
         setIsLoading(false)
@@ -35,13 +34,12 @@ export default function ScheduledJobsTab({ professionalServiceType, professional
     }
 
     fetchScheduledJobs()
-  }, [professionalServiceType])
+  }, [])
 
 
   const handleAcceptJob = async (jobId: string) => {
     setAcceptingId(jobId)
     try {
-      // -------------------- TODO --------------------
       const res = await fetch(`/api/jobs/accept`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,8 +99,16 @@ export default function ScheduledJobsTab({ professionalServiceType, professional
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-red-400">
-        <p>Ocurrió un problema: {error}</p>
+      <div className="flex flex-col items-center justify-center py-20 border border-dashed border-red-500/20 rounded-2xl bg-red-500/[0.01] text-center">
+        <div className="bg-red-500/10 p-4 rounded-full mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-white">No se pudo obtener los trabajos programados</h3>
+        <p className="text-slate-400 mt-2 max-w-sm text-sm">
+          Hubo un error al intentar recuperar los trabajos programados.
+        </p>
       </div>
     )
   }

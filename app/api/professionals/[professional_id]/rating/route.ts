@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { broadcastToProfessionals } from "@/app/api/jobs/stream/route";
 import { MESSAGE_TYPES } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { validateInternalToken } from "@/lib/auth-api";
 
 // Endpoint for updating a professional's rating after a job is completed
 
@@ -10,6 +11,9 @@ export async function PUT(
   { params }: { params: Promise<{ professional_id: string }> }
 ) {
   try {
+    const { isValid, errorResponse } = validateInternalToken(request);
+    if(!isValid) return errorResponse;
+
     const professionalId = (await params).professional_id;
     const { avg_rating, rating } = await request.json();
 
@@ -38,8 +42,6 @@ export async function PUT(
         rating: Number(avgRating),
       }
     });
-
-    await new Promise(resolve => setTimeout(resolve, 5000));
 
     // Broadcast the new rating to the professional
     broadcastToProfessionals([professionalId], {
