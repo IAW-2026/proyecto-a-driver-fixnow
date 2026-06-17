@@ -3,11 +3,16 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from './stream/route';
 import { MESSAGE_TYPES } from "@/lib/constants";
+import { validateInternalToken } from "@/lib/auth-api";
 
 // Endpoint for creating a new job request from the client app
 
 export async function POST(request: Request) {
   try {
+
+    const { isValid, errorResponse } = validateInternalToken(request);
+    if(!isValid) return errorResponse;
+
     const body = await request.json();
 
     // -------------------- TODO --------------------

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from "../stream/route";
 import { MESSAGE_TYPES } from "@/lib/constants";
+import { validateInternalToken } from "@/lib/auth-api";
 
 // Endpoint for updating a job request
 
@@ -9,6 +10,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ job_id: string }> }
 ) {
+
+  const { isValid, errorResponse } = validateInternalToken(request);
+  if(!isValid) return errorResponse;
+
   const jobId = (await params).job_id;
 
   try {

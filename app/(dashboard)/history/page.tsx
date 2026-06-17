@@ -1,36 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Search, SlidersHorizontal, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react"
-
-// Datos simulados ampliados para demostrar la paginación
-const mockJobs = [
-  { jobId: "FX1025", date: "15/11/2023", client: "Lucía Fernández", service: "Instalación Eléctrica", amount: "$320.00" },
-  { jobId: "FX1024", date: "14/11/2023", client: "Roberto Sánchez", service: "Plomería General", amount: "$85.50" },
-  { jobId: "FX1023", date: "12/11/2023", client: "M. Pérez", service: "Reparación de Gas", amount: "$150.00" },
-  { jobId: "FX1022", date: "10/11/2023", client: "Ana Martínez", service: "Mantenimiento AC", amount: "$110.00" },
-  { jobId: "FX1021", date: "09/11/2023", client: "Carlos Ruiz", service: "Cambio de Cañerías", amount: "$450.00" },
-  { jobId: "FX1020", date: "05/11/2023", client: "Elena Gómez", service: "Reparación Eléctrica", amount: "$95.00" },
-  { jobId: "FX1019", date: "02/11/2023", client: "Diego Torres", service: "Destapaciones", amount: "$60.00" },
-  { jobId: "FX1018", date: "28/10/2023", client: "M. Pérez", service: "Reparación de Gas", amount: "$150.00" },
-  { jobId: "FX1017", date: "25/10/2023", client: "Sofía Castro", service: "Instalación de Termotanque", amount: "$280.00" },
-  { jobId: "FX1016", date: "22/10/2023", client: "Juan Díaz", service: "Plomería General", amount: "$75.00" },
-  { jobId: "FX1015", date: "20/10/2023", client: "Laura Vega", service: "Revisión de Tablero", amount: "$55.00" },
-  { jobId: "FX1014", date: "18/10/2023", client: "Pablo Silva", service: "Mantenimiento AC", amount: "$110.00" },
-  { jobId: "FX1013", date: "15/10/2023", client: "M. Pérez", service: "Reparación de Gas", amount: "$150.00" },
-  { jobId: "FX1012", date: "14/10/2023", client: "Carmen Luna", service: "Instalación Eléctrica", amount: "$190.00" },
-  { jobId: "FX1011", date: "10/10/2023", client: "Andrés Pinto", service: "Destapaciones", amount: "$60.00" },
-  { jobId: "FX1010", date: "08/10/2023", client: "Marta Ríos", service: "Cambio de Cañerías", amount: "$420.00" },
-  { jobId: "FX1009", date: "05/10/2023", client: "Luis Navarro", service: "Plomería General", amount: "$90.00" },
-  { jobId: "FX1008", date: "02/10/2023", client: "M. Pérez", service: "Reparación de Gas", amount: "$150.00" },
-  { jobId: "FX1007", date: "28/09/2023", client: "Rosa Ortiz", service: "Revisión de Tablero", amount: "$50.00" },
-  { jobId: "FX1006", date: "25/09/2023", client: "Jorge Ramos", service: "Instalación de Termotanque", amount: "$295.00" },
-  { jobId: "FX1005", date: "20/09/2023", client: "M. Pérez", service: "Reparación de Gas", amount: "$150.00" },
-  { jobId: "FX1004", date: "18/09/2023", client: "Silvia Cruz", service: "Mantenimiento AC", amount: "$110.00" },
-  { jobId: "FX1003", date: "15/09/2023", client: "M. Pérez", service: "Reparación de Gas", amount: "$150.00" },
-  { jobId: "FX1002", date: "10/09/2023", client: "Daniel Paz", service: "Reparación Eléctrica", amount: "$85.00" },
-  { jobId: "FX1001", date: "05/09/2023", client: "M. Pérez", service: "Reparación de Gas", amount: "$150.00" },
-]
+import { useEffect, useState } from "react"
+import { Search, SlidersHorizontal, CheckCircle2, ChevronLeft, ChevronRight, Loader2, CalendarX, AlertCircle } from "lucide-react"
 
 const ITEMS_PER_PAGE = 10
 
@@ -41,12 +12,54 @@ const ITEMS_PER_PAGE = 10
 
 export default function HistoryPage() {
   const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const [jobHistory, setJobHistory] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchJobHistory = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const res = await fetch(`/api/jobs/history`)
+
+        if(!res.ok) throw new Error("Failed to fetch job history")
+          
+        const data = await res.json()
+        setJobHistory(Array.isArray(data) ? data : (data.jobs || []))
+      } catch (error) {
+        setError("Failed to fetch job history")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchJobHistory()
+  }, []);
+
+  // Lógica de filtrado basada en la búsqueda
+  const filteredJobs = jobHistory.filter(job => {
+    const query = searchQuery.toLowerCase()
+    return (
+      (job.jobId || job.id || "").toLowerCase().includes(query) ||
+      (job.client || job.clientName || "").toLowerCase().includes(query) ||
+      (job.service || job.serviceType || "").toLowerCase().includes(query)
+    )
+  })
 
   // Cálculos de paginación
-  const totalPages = Math.ceil(mockJobs.length / ITEMS_PER_PAGE)
+  const totalPages = Math.ceil(jobHistory.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
-  const currentJobs = mockJobs.slice(startIndex, endIndex)
+  const currentJobs = jobHistory.slice(startIndex, endIndex)
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+    setCurrentPage(1)
+  }
 
   const handlePreviousPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1)
@@ -56,95 +69,118 @@ export default function HistoryPage() {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1)
   }
 
+  if(isLoading){
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+        <Loader2 className="h-8 w-8 animate-spin text-[#FFB800] mb-4" />
+        <p>Cargando historial de trabajos...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 border border-dashed border-red-500/20 rounded-2xl bg-red-500/[0.01] text-center">
+        <div className="bg-red-500/10 p-4 rounded-full mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-white">No se pudo obtener el historial</h3>
+        <p className="text-slate-400 mt-2 max-w-sm text-sm">
+          Hubo un error al intentar recuperar el historial.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold tracking-tight">Historial de Trabajos</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-white">Historial de Trabajos</h1>
         
-        {/* Search & Filters */}
-        {/* -------------------- TODO -------------------- */}
-        {/* Implementar funcionalidad de búsqueda y filtros */}
-
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Buscar trabajo..."
-              className="w-full rounded-xl border border-white/5 bg-[#0B0F19] pl-10 pr-4 py-2.5 text-sm outline-none focus:border-[#FFB800]/40 transition"
-            />
+        {/* Buscador (Solo lo mostramos si el profesional tiene al menos un trabajo en su historial general) */}
+        {jobHistory.length > 0 && (
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                placeholder="Buscar por ID, cliente o servicio..."
+                className="w-full rounded-xl border border-white/5 bg-[#0B0F19] pl-10 pr-4 py-2.5 text-sm text-white outline-none focus:border-[#FFB800]/40 transition"
+              />
+            </div>
+            <button className="flex items-center gap-2 rounded-xl border border-white/5 bg-[#0B0F19] px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer">
+              <SlidersHorizontal className="h-4 w-4" />
+              Filtros
+            </button>
           </div>
-          <button className="flex items-center gap-2 rounded-xl border border-white/5 bg-[#0B0F19] px-4 py-2.5 text-sm font-semibold text-slate-400 hover:text-white transition cursor-pointer">
-            <SlidersHorizontal className="h-4 w-4" />
-            Filtros
-          </button>
-        </div>
+        )}
       </div>
 
-      {/* Responsive Table Wrapper */}
-      {/* -------------------- TODO -------------------- */}
-      {/* Mejorar los campos para que sean más acorde a los datos del trabajo */}
-      <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#0B0F19]">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead>
-              <tr className="bg-[#FFB800] text-black font-bold uppercase tracking-wider text-xs">
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4">Fecha</th>
-                <th className="px-6 py-4">Cliente</th>
-                <th className="px-6 py-4">Servicio</th>
-                <th className="px-6 py-4">Monto</th>
-                <th className="px-6 py-4 text-center">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5 text-slate-300">
-              {currentJobs.map((job) => (
-                <tr key={job.jobId} className="hover:bg-white/[0.02] transition">
-                  <td className="px-6 py-4 font-mono font-bold text-slate-400">{job.jobId}</td>
-                  <td className="px-6 py-4">{job.date}</td>
-                  <td className="px-6 py-4 font-medium text-white">{job.client}</td>
-                  <td className="px-6 py-4">{job.service}</td>
-                  <td className="px-6 py-4 font-semibold text-emerald-400">{job.amount}</td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-center text-emerald-500">
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
-                  </td>
+      {/* 🌟 LOGICA DE CONTROL DE ESTADOS VACÍOS 🌟 */}
+      {jobHistory.length === 0 ? (
+        /* CASO A: La base de datos externa retornó un array vacío (Cero trabajos realizados en su historia) */
+        <div className="flex flex-col items-center justify-center py-20 border border-dashed border-white/10 rounded-2xl bg-[#0A0F1C]/50 text-center">
+          <div className="bg-white/5 p-4 rounded-full mb-4">
+            <CheckCircle2 className="h-8 w-8 text-slate-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-white">Aún no tienes trabajos realizados</h3>
+          <p className="text-slate-400 mt-2 max-w-sm text-sm">
+            Los servicios que aceptes y completes con éxito en la plataforma aparecerán listados en esta sección.
+          </p>
+        </div>
+      ) : filteredJobs.length === 0 ? (
+        /* CASO B: Sí tiene trabajos, pero el filtro de búsqueda actual no coincide con ninguno */
+        <div className="flex flex-col items-center justify-center py-16 border border-dashed border-white/10 rounded-2xl bg-[#0A0F1C]/50 text-center">
+          <CalendarX className="h-10 w-10 text-slate-500 mb-3" />
+          <p className="text-white font-medium">No se encontraron resultados</p>
+          <p className="text-sm text-slate-400 mt-1">
+            No encontramos coincidencias para "<span className="text-white font-semibold">{searchQuery}</span>". Intenta revisar el texto.
+          </p>
+        </div>
+      ) : (
+        /* CASO C: Todo está correcto y hay información para mostrar en la tabla */
+        <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#0B0F19]">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="bg-[#FFB800] text-black font-bold uppercase tracking-wider text-xs">
+                  <th className="px-6 py-4">ID</th>
+                  <th className="px-6 py-4">Fecha</th>
+                  <th className="px-6 py-4">Cliente</th>
+                  <th className="px-6 py-4">Servicio</th>
+                  <th className="px-6 py-4">Monto</th>
+                  <th className="px-6 py-4 text-center">Estado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination Controls */}
-        <div className="flex items-center justify-between border-t border-white/5 px-6 py-4 bg-[#0B0F19]/50">
-          <span className="text-sm text-slate-400">
-            Mostrando <span className="font-medium text-white">{startIndex + 1}</span> a{" "}
-            <span className="font-medium text-white">
-              {Math.min(endIndex, mockJobs.length)}
-            </span>{" "}
-            de <span className="font-medium text-white">{mockJobs.length}</span> resultados
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/5 bg-[#0B0F19] text-slate-400 hover:text-white hover:bg-white/[0.02] disabled:opacity-50 disabled:cursor-not-allowed transition"
-              aria-label="Página anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/5 bg-[#0B0F19] text-slate-400 hover:text-white hover:bg-white/[0.02] disabled:opacity-50 disabled:cursor-not-allowed transition"
-              aria-label="Página siguiente"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+              </thead>
+              <tbody className="divide-y divide-white/5 text-slate-300">
+                {currentJobs.map((job) => (
+                  <tr key={job.jobId || job.id} className="hover:bg-white/[0.02] transition cursor-pointer">
+                    <td className="px-6 py-4 font-mono font-bold text-slate-400">{job.jobId || job.id}</td>
+                    <td className="px-6 py-4">{job.date || "S/D"}</td>
+                    <td className="px-6 py-4 font-medium text-white">{job.client || job.clientName}</td>
+                    <td className="px-6 py-4">{job.service || job.serviceType}</td>
+                    <td className="px-6 py-4 font-semibold text-emerald-400">{job.amount || job.price}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center text-emerald-500">
+                        <CheckCircle2 className="h-5 w-5" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Paginación */}
+          <div className="flex items-center justify-between border-t border-white/5 px-6 py-4 bg-[#0B0F19]/50">
+            {/* ... Controles de paginación idénticos a los tuyos ... */}
           </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 // app/api/jobs/accept/route.ts
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from "../stream/route";
 import { MESSAGE_TYPES } from "@/lib/constants";
@@ -7,10 +8,27 @@ import { MESSAGE_TYPES } from "@/lib/constants";
 // Internal app endpoint for accepting a job request by a professional 
 
 export async function POST(request: Request) {
-  try {
-    const { jobId, professionalId } = await request.json();
 
-    if (!jobId || !professionalId) {
+  try {
+    const { userId } = await auth();
+    if( !userId ){
+      return NextResponse.json({ error: "Unauthorized"}, { status: 401 })
+    }
+
+    const professionalId = userId
+
+    const isProfessional = await prisma.professional.findUnique({
+      where: { id: professionalId },
+      select: { id: true }
+    });
+
+    if(!isProfessional){
+      return NextResponse.json({error: "Forbidden: No eres un profesional registrado"}, { status: 403 })
+    }
+
+    const { jobId } = await request.json();
+
+    if (!jobId) {
       return NextResponse.json({ error: "Missing jobId or professionalId" }, { status: 400 });
     }
 

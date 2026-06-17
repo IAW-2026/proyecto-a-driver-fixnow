@@ -23,20 +23,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Professional profile or service type not found" }, { status: 404 });
     }
 
-    const serviceType = professional.serviceType;
+    const serviceType = String(professional.serviceType).toLowerCase();
     const professionalId = professional.id;
     const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
-    const externalUrl = new URL(`${apiURL}/jobs/scheduled`);
+    const externalUrl = new URL(`${apiURL}/jobs/available`);
 
-    externalUrl.searchParams.append("serviceType", serviceType);
-    if(professionalId) {
-        externalUrl.searchParams.append("professionalId", professionalId);
-    }
+    externalUrl.searchParams.append("service_type", serviceType);
+    // if(professionalId) {
+    //     externalUrl.searchParams.append("professional_id", professionalId);
+    // }
+
+    console.log("URL remota destino: ", externalUrl.toString())
 
     const response = await fetch(externalUrl.toString(), {
       method: "GET",
       headers: {
-        "Content-Type": "application/json",
         "Authorization": `Bearer ${process.env.INTERNAL_API_SECRET_KEY}`
       }
     });

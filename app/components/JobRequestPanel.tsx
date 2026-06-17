@@ -87,7 +87,7 @@ export default function JobRequestTable({
   useEffect(() => {
     if(!professionalId) return
 
-    const eventSource = new EventSource(`/api/jobs/stream?professionalId=${professionalId}`)
+    const eventSource = new EventSource(`/api/jobs/stream`)
     
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data)

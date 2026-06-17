@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from "@/app/api/jobs/stream/route";
 import { MESSAGE_TYPES } from "@/lib/constants";
+import { validateInternalToken } from "@/lib/auth-api";
 
 // Endpoint for cancelling a job request by the client app.
 
@@ -9,6 +10,10 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ job_id: string }> }
 ) {
+
+  const { isValid, errorResponse } = validateInternalToken(request);
+  if(!isValid) return errorResponse;
+
   const jobId = (await params).job_id;
 
   try {
