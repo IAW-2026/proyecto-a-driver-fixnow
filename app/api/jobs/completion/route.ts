@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         status: "completed",
-        price,
+        estimated_price: price,
         description
       })
     });
