@@ -1,4 +1,4 @@
-// app/api/jobs/complete/route.ts
+// app/api/jobs/completion/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { broadcastToProfessionals } from "../stream/route";

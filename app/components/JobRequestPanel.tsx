@@ -251,7 +251,7 @@ export default function JobRequestTable({
 
     try {
       // 1. Llamada real a tu API para completar el trabajo
-      const res = await fetch("/api/jobs/complete", {
+      const res = await fetch("/api/jobs/completion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId: currentJob.jobId, professionalId: professionalId, price: finalPrice, description: finalDescription }),
