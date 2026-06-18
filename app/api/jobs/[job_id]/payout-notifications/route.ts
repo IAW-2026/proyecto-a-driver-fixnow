@@ -11,13 +11,13 @@ export async function POST(
   { params }: { params: Promise<{ job_id: string }> }
 ) {
 
-  const { isValid, errorResponse } = validateInternalToken(request);
-  if(!isValid) return errorResponse;
-
   try {
     const jobId = (await params).job_id;
     const { professional_id, amount } = await request.json();
     const professionalId = professional_id;
+
+    const { isValid, errorResponse } = validateInternalToken(request);
+    if(!isValid) return errorResponse;
 
     if (!professionalId || !amount) {
       return NextResponse.json({ 
