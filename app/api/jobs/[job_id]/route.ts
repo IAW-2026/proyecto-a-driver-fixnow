@@ -30,7 +30,7 @@ export async function PATCH(
     }
 
     const estimatedPrice = estimated_price
-    const serviceType = service_type;
+    const serviceType = service_type.toUpperCase();
 
     // Find the existing job
     const existingJob = await prisma.jobRequest.findUnique({
