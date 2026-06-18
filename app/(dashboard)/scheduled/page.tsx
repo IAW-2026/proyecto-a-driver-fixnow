@@ -40,7 +40,7 @@ export default function ScheduledJobsTab({ professionalId }: { professionalId: s
   const handleAcceptJob = async (jobId: string) => {
     setAcceptingId(jobId)
     try {
-      const res = await fetch(`/api/jobs/accept`, {
+      const res = await fetch(`/api/jobs/acceptation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId, professionalId })

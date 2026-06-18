@@ -213,7 +213,7 @@ export default function JobRequestTable({
   const handleAcceptJob = async (jobId: string) => {
     setAcceptingJobId(jobId)
     try {
-      const res = await fetch("/api/jobs/accept", {
+      const res = await fetch("/api/jobs/acceptation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobId: jobId, professionalId: professionalId }),
