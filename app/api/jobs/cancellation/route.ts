@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server"
-import { responseCookiesToRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
+
 // Internal endpoint for the professional to cancel a job request
 
 export async function POST(request: Request) {
@@ -24,6 +24,7 @@ export async function POST(request: Request) {
 
         const { jobId, cancellationReason } = await request.json();
         if (!jobId || !cancellationReason || !professionalId) {
+            console.error
             return NextResponse.json({ error: "Missing fields" }, { status: 400 });
         }
         // Get the job to verify it belongs to this professional
@@ -41,7 +42,7 @@ export async function POST(request: Request) {
 
         // Notify the client app the job was cancelled
         const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
-        const response = await fetch(`${apiURL}/jobs/${jobId}/cancellation`, {
+        const response = await fetch(`${apiURL}/jobs/${jobId}/cancel`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

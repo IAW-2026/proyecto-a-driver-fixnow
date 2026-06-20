@@ -1,10 +1,28 @@
 import Sidebar from "../components/Sidebar"
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+import { prisma } from "@/lib/prisma"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const {userId} = await auth();
+
+  if(!userId){
+    redirect("/")
+  }
+
+  const professional = await prisma.professional.findUnique({
+    where: {id: userId},
+    select: {id: true}
+  })
+
+  if(!professional){
+    redirect("/onboarding")
+  }
+
   return (
     // min-h-screen creates the base viewport height limit
     // h-screen md:overflow-hidden keeps the sidebar crisp and prevents double-scrollbars

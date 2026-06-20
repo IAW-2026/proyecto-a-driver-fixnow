@@ -46,7 +46,7 @@ export default function ActiveJobCard({ job, professionalId, onComplete }: Activ
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
             jobId: job.jobId,
-            cancellation_reason: cancelReason }),
+            cancellationReason: cancelReason }),
       })
       if (!res.ok) throw new Error("Failed to cancel job")
       onComplete() // Llama a onComplete para limpiar el estado y volver a ONLINE
