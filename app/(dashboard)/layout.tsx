@@ -1,5 +1,28 @@
 import Sidebar from "../components/Sidebar"
 
+const handleAcceptScheduledJob = async (jobId: string) => {
+  try {
+    const res = await fetch("/api/jobs/acceptation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId, professionalId }),
+    })
+    
+    if (!res.ok) throw new Error("Error al aceptar")
+
+    // 🔥 LA CLAVE: Aquí NO cambias el estado a BUSY.
+    // El profesional sigue ONLINE en el Home para recibir trabajos de hoy.
+    
+    // Lo que haces es actualizar tu estado local de la lista de programados:
+    setScheduledJobs(prev => 
+      prev.map(job => job.jobId === jobId ? { ...job, isAccepted: true } : job)
+    )
+
+  } catch (err) {
+    alert("No se pudo agendar el trabajo")
+  }
+}
+
 export default function DashboardLayout({
   children,
 }: {
