@@ -100,13 +100,13 @@ export default function ReviewsPage() {
       <div className="grid gap-4 max-w-3xl">
         {currentReviews.map((review) => {
           // Normalización de propiedades en caso de variaciones en la nomenclatura de la API externa
-          const authorName = review.author || review.clientName || "Usuario Anónimo"
-          const reviewDate = review.date || review.createdAt || "S/D"
-          const commentText = review.comment || review.text || "Sin comentarios de texto."
-          const ratingValue = Number(review.rating || 5)
+          const authorName = review.reviewer_id || "Usuario Anónimo"
+          const reviewDate = review.created_at ? new Date(review.created_at).toLocaleDateString("es-AR") : "S/D"
+          const commentText = review.comment || "Sin comentarios de texto."
+          const ratingValue = Number(review.rating ?? 5)
 
           return (
-            <div key={review.id || review._id} className="rounded-2xl border border-white/5 bg-[#0B0F19] p-6 space-y-4 hover:border-white/10 transition">
+            <div key={review.review_id ?? review.index} className="rounded-2xl border border-white/5 bg-[#0B0F19] p-6 space-y-4 hover:border-white/10 transition">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-slate-300">

@@ -1,27 +1,19 @@
 import { auth, currentUser } from "@clerk/nextjs/server"
-import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { Briefcase, ShieldCheck, MapPin } from "lucide-react"
 import JobRequestTable from "@/app/components/JobRequestPanel"
 
 export default async function HomePage() {
   const { userId } = await auth()
-  const user = await currentUser()
 
-  // Guard: Redirect to landing if unauthenticated
-  if (!userId || !user) {
-    redirect("/")
-  }
+  if(!userId) return;
 
   // Fetch the professional's local database profile
   const professional = await prisma.professional.findUnique({
     where: { id: userId },
   })
 
-  // Guard: If they authenticated but haven't onboarded yet, send them back to onboarding
-  if (!professional) {
-    redirect("/onboarding")
-  }
+  if(!professional) return;
 
   const formatService = (type: string | null) => {
     if (!type) return "No asignado"

@@ -1,23 +1,21 @@
 "use client"
 
 import { MapPin, Clock, DollarSign, CalendarDays } from "lucide-react"
-import { parse } from "date-fns"
 
 interface JobRequestCardProps {
   job: {
     jobId?: string
-    id?: string // Soporte por si el backend viene con .id
+    id?: string 
     description: string
     estimatedPrice?: number | null
     latitude?: number
     longitude?: number
     requestedDate?: string
-    scheduledTime?: String
+    scheduledTime?: string
     isAccepted?: boolean
   }
   onAccept: (jobId: string) => void
-  onDecline?: (jobId: string) => void // 🔥 Agregado a la interfaz
-  professionalId?: string             // 🔥 Agregado a la interfaz (opcional)
+  onDecline?: (jobId: string) => void
   isLoading?: boolean
 }
 
@@ -25,16 +23,17 @@ export default function JobRequestCard({
   job, 
   onAccept, 
   onDecline, 
-  professionalId, 
   isLoading = false 
 }: JobRequestCardProps) {
   
-  // Identificador seguro unificado
   const targetId = job.jobId || job.id || ""
 
-  const formattedDate = job.requestedDate ? parse(job.requestedDate+' '+job.scheduledTime, 'dd/MM/yyyy HH:mm', new Date()).toLocaleDateString('es-ES', {
-    weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-  }) : "Hace unos momentos"
+  // 💡 Al venir el dato como '2026-06-23T06:01:00.000Z' desde la API, 'new Date()' lo procesa automáticamente
+  const formattedDate = job.requestedDate 
+    ? new Date(job.requestedDate).toLocaleDateString('es-ES', {
+        weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      }) 
+    : "Hace unos momentos"
 
   return (
     <div className={`group border bg-[#0A0F1C] rounded-2xl p-6 transition-all duration-300 flex flex-col justify-between
@@ -68,26 +67,28 @@ export default function JobRequestCard({
         </div>
       </div>
 
-      {/* Seccion de Botones Dinámicos */}
+      {/* 🛠️ Lógica de Botones Dinámicos Corregida */}
       {job.isAccepted ? (
-        <div className="mt-6 w-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold py-4 rounded-xl flex items-center justify-center gap-2 text-base">
-          <span className="text-xl">✓</span> Trabajo Aceptado
-        </div>
-      ) : (
-        <div className="mt-6 flex gap-3 w-full">
-          {/* 🛠️ Botón Rechazar (Aparece solo si se pasa la propiedad onDecline) */}
+        <div className="mt-6 flex flex-col gap-3 w-full">
+          <div className="w-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 text-base">
+            <span className="text-xl">✓</span> Trabajo Aceptado
+          </div>
+          
+          {/* Aparece SOLO si está aceptado */}
           {onDecline && (
             <button
               type="button"
               onClick={() => onDecline(targetId)}
               disabled={isLoading}
-              className="px-4 py-4 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-red-400/80 hover:text-red-400 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 text-red-400/80 hover:text-red-400 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Rechazar
+              Rechazar / Cancelar Trabajo
             </button>
           )}
-
-          {/* Botón Aceptar (Ahora es flex-1 para expandirse armónicamente al lado del de rechazo) */}
+        </div>
+      ) : (
+        <div className="mt-6 flex w-full">
+          {/* Botón Aceptar (Única opción si el trabajo es nuevo) */}
           {onAccept && (
             <button
               onClick={() => onAccept(targetId)}

@@ -29,9 +29,6 @@ export async function GET(request: Request) {
     const externalUrl = new URL(`${apiURL}/jobs/available`);
 
     externalUrl.searchParams.append("service_type", serviceType);
-    // if(professionalId) {
-    //     externalUrl.searchParams.append("professional_id", professionalId);
-    // }
 
     console.log("URL remota destino: ", externalUrl.toString())
 
@@ -48,6 +45,7 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
+    console.log("Scheduled Job example: ", data)
     return NextResponse.json(data, { status: 200 });
 } catch (error) {
     console.error("Error fetching scheduled jobs:", error);
