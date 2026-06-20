@@ -1,4 +1,4 @@
-// app/api/jobs/accept/route.ts
+// app/api/jobs/acceptation/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
@@ -19,7 +19,11 @@ export async function POST(request: Request) {
 
     const isProfessional = await prisma.professional.findUnique({
       where: { id: professionalId },
-      select: { id: true }
+      select: { 
+        id: true,
+        firstName: true,
+        lastName: true
+      }
     });
 
     if(!isProfessional){
@@ -47,6 +51,8 @@ export async function POST(request: Request) {
 
     const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
 
+    const fullName = isProfessional.firstName + " " + isProfessional.lastName
+
     const response = await fetch(`${apiURL}/jobs/${jobId}`, {
       method: "PATCH",
       headers: {
@@ -55,7 +61,8 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         status: "accepted",
-        professional_id: professionalId
+        professional_id: professionalId,
+        full_name: fullName
       })
     });
 

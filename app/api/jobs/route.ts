@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const jobId = job_id;
     const clientId = client_id;
     const clientName = client_full_name;
-    const serviceType = service_type;
+    const serviceType = service_type.toUpperCase();
     const estimatedPrice = estimated_price !== undefined ? Number(estimated_price) : null;
 
     // Check if job already exists

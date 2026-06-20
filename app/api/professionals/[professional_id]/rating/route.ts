@@ -15,15 +15,15 @@ export async function PUT(
     if(!isValid) return errorResponse;
 
     const professionalId = (await params).professional_id;
-    const { avg_rating, rating } = await request.json();
+    const { new_average_rating, rating } = await request.json();
 
-      if (!avg_rating){
+      if (!new_average_rating){
       return NextResponse.json({ 
         error: "Rating (average) is required" 
       }, { status: 400 });
     }
 
-    const avgRating = avg_rating;
+    const avgRating = new_average_rating;
 
     // Check if professional exists
     const professional = await prisma.professional.findUnique({
