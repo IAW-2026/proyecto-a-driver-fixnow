@@ -28,6 +28,7 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
+    console.log("Ejemplo de trabajo: ", data)
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error("Error fetching job history:", error);
