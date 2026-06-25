@@ -15,8 +15,6 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    // -------------------- TODO --------------------
-    // Verify fields
     const { 
       job_id, 
       client_id,

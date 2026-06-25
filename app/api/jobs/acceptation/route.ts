@@ -116,9 +116,6 @@ export async function POST(request: Request) {
 
     console.log(`Job ${jobId} accepted by professional ${professionalId}`);
 
-    // -------------------- TODO --------------------
-    // Notify the client's app about the acceptance
-
     return NextResponse.json({ 
       success: true,
       job: updatedJob 
