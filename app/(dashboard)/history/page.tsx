@@ -22,19 +22,35 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const normalizeJob = (job: any): Job => ({
+    job_id: job.job_id ?? job.jobId ?? job.id ?? "",
+    service_type: job.service_type ?? job.serviceType ?? job.serviceType ?? "",
+    description: job.description ?? job.details ?? "",
+    status: job.status ?? job.state ?? "",
+    estimated_price: Number(job.estimated_price ?? job.estimatedPrice ?? job.price ?? 0),
+    requested_date: job.requested_date ?? job.requestedDate ?? job.date ?? "",
+  })
+
   useEffect(() => {
     const fetchJobHistory = async () => {
       try {
         setIsLoading(true)
         setError(null)
-        
+
         const res = await fetch(`/api/jobs/history`)
 
         if (!res.ok) throw new Error("Failed to fetch job history")
-          
+
         const data = await res.json()
-        // Adaptamos para leer tanto un array directo como una propiedad .jobs
-        setJobHistory(Array.isArray(data) ? data : (data.jobs || []))
+        const fetchedJobs = Array.isArray(data)
+          ? data
+          : data.jobs || data.data || data.history || []
+
+        const normalizedHistory = Array.isArray(fetchedJobs)
+          ? fetchedJobs.map(normalizeJob)
+          : []
+
+        setJobHistory(normalizedHistory)
       } catch (error) {
         console.error(error)
         setError("Failed to fetch job history")
@@ -45,10 +61,6 @@ export default function HistoryPage() {
 
     fetchJobHistory()
   }, [])
-
-  useEffect(() => {
-    setCurrentPage(1) // Resetea a la página 1 si cambia la búsqueda
-  }, [searchQuery])
 
   // Lógica de filtrado basada en tu estructura real de datos
   const filteredJobs = jobHistory.filter(job => {
@@ -61,10 +73,20 @@ export default function HistoryPage() {
   })
 
   // Cálculos de paginación
-  const totalPages = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE)
+  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / ITEMS_PER_PAGE))
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE
   const currentJobs = filteredJobs.slice(startIndex, endIndex)
+
+  useEffect(() => {
+    setCurrentPage(1) // Resetea a la página 1 si cambia la búsqueda
+  }, [searchQuery])
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)

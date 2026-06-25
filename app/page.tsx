@@ -123,8 +123,8 @@ export default async function LandingPage() {
       <footer className="max-w-7xl w-full mx-auto px-6 py-6 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500 font-medium">
         <p>© 2026 FixNow. Todos los derechos reservados.</p>
         <div className="flex gap-6">
-          <Link href="/privacidad" className="hover:text-slate-400 transition-colors">Privacidad</Link>
-          <Link href="/terminos" className="hover:text-slate-400 transition-colors">Términos</Link>
+          <Link href="/" className="hover:text-slate-400 transition-colors">Privacidad</Link>
+          <Link href="/" className="hover:text-slate-400 transition-colors">Términos</Link>
         </div>
       </footer>
     </div>
