@@ -25,14 +25,19 @@ export async function GET(request: NextRequest) {
       prisma.professional.findMany({
         select: {
           id: true,
-          ratingPromedio: true,
+          rating: true,
         },
       }),
     ]);
 
+    const professionalsWithRatingPromedio = professionals.map((professional) => ({
+      id: professional.id,
+      ratingPromedio: professional.rating,
+    }));
+
     return NextResponse.json({
       totalUsuarios,
-      professionals,
+      professionals: professionalsWithRatingPromedio,
     });
   } catch (error) {
     console.error('Error fetching analytics:', error);
