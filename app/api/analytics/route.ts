@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
       prisma.professional.count(),
       prisma.professional.findMany({
         select: {
+          firstName: true,
+          lastName: true,
           id: true,
           rating: true,
         },
@@ -31,6 +33,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     const professionalsWithRatingPromedio = professionals.map((professional) => ({
+      fullName: professional.firstName + " " + professional.lastName,
       id: professional.id,
       ratingPromedio: professional.rating,
     }));
