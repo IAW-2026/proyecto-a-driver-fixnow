@@ -42,13 +42,14 @@ export async function POST(request: Request) {
 
         // Notify the client app the job was cancelled
         const apiURL = process.env.NEXT_PUBLIC_EXTERNAL_API_CLIENT;
-        const response = await fetch(`${apiURL}/jobs/${jobId}/cancel`, {
-            method: "POST",
+        const response = await fetch(`${apiURL}/jobs/${jobId}`, {
+            method: "PATCH",
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${process.env.INTERNAL_API_SECRET_KEY}`
             },
             body: JSON.stringify({
+                status: "cancelled",
                 cancellation_reason: cancellationReason
             })
         });
